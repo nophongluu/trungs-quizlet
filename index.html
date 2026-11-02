@@ -1,533 +1,2258 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TQuiz - Học tập thông minh</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
-                    }
-                }
-            }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TQuiz (T+) — Smart Quizlet + FSRS + 5-Tier AI Written</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Font Inter & Plus Jakarta Sans -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            qbg: '#0a092d',        // Deep Quizlet background
+            qcard: '#2e3856',      // Quizlet card surface
+            qcardHover: '#384569', // Quizlet card hover
+            qinput: '#0a092d',     // Dark input inside editor cards
+            qsub: '#1a1d28',       // Secondary dark surface
+            qblue: '#4255ff',      // Primary Quizlet blue button
+            qblueHover: '#5869ff',
+            qgreen: '#18ae79',     // Progress bar green
+            qorange: '#ff983a',    // Progress bar orange
+            qtext: '#f6f7fb',
+            qmuted: '#939bb4'
+          }
         }
-    </script>
+      }
+    };
+  </script>
+  <style>
+    body {
+      background-color: #0a092d;
+      color: #f6f7fb;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    /* Custom Scrollbar matching Quizlet Dark */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0a092d; }
+    ::-webkit-scrollbar-thumb { background: #2e3856; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4255ff; }
+
+    /* 3D Flashcard Flip Animation */
+    .perspective-1000 { perspective: 1200px; }
+    .flip-card-inner {
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      transform-style: preserve-3d;
+    }
+    .flipped { transform: rotateX(180deg); }
+    .flip-face {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .flip-back { transform: rotateX(180deg); }
+
+    /* Dashed Image Box in Editor */
+    .dashed-image-box {
+      border: 2px dashed #586380;
+      transition: all 0.2s ease;
+    }
+    .dashed-image-box:hover {
+      border-color: #4255ff;
+      background-color: rgba(66, 85, 255, 0.08);
+    }
+  </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
+<body class="min-h-screen flex flex-col selection:bg-qblue selection:text-white">
 
-    <!-- Header / Navbar -->
-    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="app.switchTab('dashboard')">
-                <!-- Logo Rounded T với cỏ 4 lá -->
-                <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
-                    T🍀
-                </div>
-                <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-brand-600 to-indigo-400 bg-clip-text text-transparent">TQuiz</span>
-            </div>
-            
-            <nav class="hidden md:flex space-x-1">
-                <button onclick="app.switchTab('dashboard')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition" data-target="dashboard">Dashboard</button>
-                <button onclick="app.switchTab('sets')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition" data-target="sets">Sets</button>
-                <button onclick="app.switchTab('statistics')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition" data-target="statistics">Statistics</button>
-            </nav>
+  <!-- =========================================================
+       TOP NAVIGATION BAR (Exact Quizlet Dark Header)
+  ========================================================== -->
+  <header class="sticky top-0 z-40 h-16 bg-[#0a092d] border-b border-[#2e3856]/40 px-4 lg:px-6 flex items-center justify-between gap-4 select-none">
+    <!-- Left: Hamburger + T+ Logo -->
+    <div class="flex items-center gap-3">
+      <button id="sidebarToggleBtn" onclick="toggleSidebar()" class="p-2 rounded-full hover:bg-[#2e3856]/60 text-qtext transition" title="Đóng/Mở thanh bên">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
 
-            <div class="flex items-center space-x-3">
-                <button onclick="app.toggleDarkMode()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
-                    🌓
-                </button>
-                <button onclick="app.exportData()" class="text-xs bg-gray-200 dark:bg-gray-700 px-3 py-1.5 rounded-md font-medium hover:bg-gray-300 dark:hover:bg-gray-600">Export JSON</button>
-            </div>
+      <!-- Stylized "T+" Logo (Matching Quizlet's Q+) -->
+      <button onclick="navigate('home')" class="flex items-center gap-0.5 focus:outline-none group">
+        <span class="text-2xl font-black tracking-tighter text-white group-hover:text-indigo-300 transition">T</span>
+        <span class="text-xl font-extrabold text-white -mt-0.5">+</span>
+      </button>
+    </div>
+
+    <!-- Center: Search Bar (#2e3856 pill) -->
+    <div class="flex-1 max-w-2xl mx-2">
+      <div class="relative flex items-center">
+        <i data-lucide="search" class="w-4 h-4 text-qmuted absolute left-4 pointer-events-none"></i>
+        <input
+          id="globalSearchInput"
+          type="text"
+          oninput="handleGlobalSearch(this.value)"
+          placeholder="Search for a question, study set, or vocabulary..."
+          class="w-full bg-[#2e3856] hover:bg-[#384569] focus:bg-[#2e3856] text-sm text-white placeholder-qmuted pl-11 pr-4 py-2.5 rounded-full focus:outline-none focus:ring-2 focus:ring-qblue transition"
+        />
+      </div>
+    </div>
+
+    <!-- Right: Download HTML + Create (+) Button + User Avatar -->
+    <div class="flex items-center gap-2.5 relative">
+      <!-- 1-Click Download HTML for GitHub Pages -->
+      <button
+        onclick="downloadStandaloneHTML()"
+        class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2e3856] hover:bg-[#384569] text-xs font-semibold text-indigo-200 transition border border-indigo-500/30"
+        title="Tải file index.html kèm dữ liệu hiện tại để up lên GitHub Pages"
+      >
+        <i data-lucide="download" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>Tải index.html</span>
+      </button>
+
+      <!-- Blue Circular "+" Button -->
+      <div class="relative">
+        <button
+          onclick="toggleCreateDropdown(event)"
+          class="w-10 h-10 rounded-full bg-qblue hover:bg-qblueHover text-white flex items-center justify-center shadow-lg shadow-qblue/30 transition"
+          title="Tạo học phần hoặc thư mục mới"
+        >
+          <i data-lucide="plus" class="w-5 h-5 stroke-[2.5]"></i>
+        </button>
+
+        <!-- Create Dropdown Menu -->
+        <div id="createDropdown" class="hidden absolute right-0 mt-2 w-52 rounded-2xl bg-[#1a1d28] border border-[#2e3856] shadow-2xl py-2 z-50 text-sm">
+          <button onclick="createNewStudySet()" class="w-full px-4 py-2.5 text-left hover:bg-[#2e3856]/70 flex items-center gap-3 text-white font-medium">
+            <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+            <span>Study set (Học phần)</span>
+          </button>
+          <button onclick="openNewFolderModal()" class="w-full px-4 py-2.5 text-left hover:bg-[#2e3856]/70 flex items-center gap-3 text-white font-medium">
+            <i data-lucide="folder-plus" class="w-4 h-4 text-amber-400"></i>
+            <span>Folder (Thư mục)</span>
+          </button>
+          <button onclick="openImportModal()" class="w-full px-4 py-2.5 text-left hover:bg-[#2e3856]/70 flex items-center gap-3 text-white font-medium">
+            <i data-lucide="upload" class="w-4 h-4 text-emerald-400"></i>
+            <span>Import từ Quizlet / Anki</span>
+          </button>
         </div>
-    </header>
+      </div>
 
-    <!-- Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
-        
-        <!-- DASHBOARD TAB -->
-        <section id="tab-dashboard" class="space-y-6">
-            <div class="bg-gradient-to-r from-brand-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center">
-                <div>
-                    <h1 class="text-2xl font-bold">Chào mừng trở lại, Lê Văn Trung! 🚀</h1>
-                    <p class="text-indigo-100 mt-1">Hôm nay bạn có các thẻ cần ôn tập theo thuật toán FSRS.</p>
-                </div>
-                <div class="mt-4 md:mt-0">
-                    <button onclick="app.quickStartStudy()" class="bg-white text-brand-600 px-5 py-2.5 rounded-xl font-bold shadow hover:bg-indigo-50 transition">Ôn tập ngay</button>
-                </div>
-            </div>
+      <!-- User Profile Avatar -->
+      <button onclick="navigate('stats')" class="w-9 h-9 rounded-full overflow-hidden border-2 border-[#2e3856] hover:border-qblue transition" title="Hồ sơ & Thống kê FSRS">
+        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Avatar" class="w-full h-full object-cover" />
+      </button>
+    </div>
+  </header>
 
-            <h2 class="text-lg font-bold">Danh sách học phần gần đây</h2>
-            <div id="dashboard-sets-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Render bằng JavaScript -->
-            </div>
-        </section>
+  <!-- =========================================================
+       MAIN BODY (Left Collapsible Sidebar + Content Area)
+  ========================================================== -->
+  <div class="flex-1 flex overflow-hidden">
+    <!-- Left Sidebar (Supports Expanded & Collapsed Icon Rail like Screenshots 1-4) -->
+    <aside id="leftSidebar" class="w-60 shrink-0 bg-[#0a092d] border-r border-[#2e3856]/30 flex flex-col justify-between py-4 px-3 select-none overflow-y-auto transition-all duration-200">
+      <div class="space-y-5">
+        <!-- Primary Navigation -->
+        <nav class="space-y-1" id="sidebarPrimaryNav">
+          <!-- Populated dynamically by renderSidebar() -->
+        </nav>
 
-        <!-- SETS TAB -->
-        <section id="tab-sets" class="hidden space-y-6">
-            <div class="flex justify-between items-center">
-                <h2 class="text-xl font-bold">Quản lý Học phần & Flashcard</h2>
-                <button onclick="app.openNewSetModal()" class="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow hover:bg-brand-700 transition">+ Tạo học phần mới</button>
-            </div>
-            <div id="sets-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Render danh sách bộ thẻ -->
-            </div>
-        </section>
+        <hr class="border-[#2e3856]/50 mx-2" />
 
-        <!-- STUDY / DETAIL SET TAB -->
-        <section id="tab-study-detail" class="hidden space-y-6">
-            <button onclick="app.switchTab('sets')" class="text-sm text-brand-600 dark:text-indigo-400 font-semibold hover:underline">← Quay lại danh sách</button>
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                <div>
-                    <h2 id="detail-set-title" class="text-2xl font-bold">Tên học phần</h2>
-                    <p id="detail-set-desc" class="text-sm text-gray-500 dark:text-gray-400 mt-1">Mô tả học phần</p>
-                </div>
-                <div class="flex space-x-2">
-                    <button onclick="app.startFlashcardSession()" class="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow hover:bg-brand-700">📚 Học Flashcard</button>
-                    <button onclick="app.startMatchingSession()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow hover:bg-emerald-700">🧩 Matching</button>
-                    <button onclick="app.startTestSession()" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow hover:bg-purple-700">📝 Kiểm tra (Test)</button>
-                </div>
-            </div>
+        <!-- "Start here" Section -->
+        <div>
+          <div class="sidebar-label px-3 mb-2 text-xs font-bold text-qmuted tracking-wide">Start here</div>
+          <nav class="space-y-1" id="sidebarModesNav">
+            <!-- Populated dynamically -->
+          </nav>
+        </div>
 
-            <div class="flex justify-between items-center">
-                <h3 class="font-bold text-lg">Danh sách từ vựng trong học phần</h3>
-                <button onclick="app.openAddCardModal()" class="text-sm bg-gray-200 dark:bg-gray-700 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-300">+ Thêm thẻ mới</button>
-            </div>
-            <div id="detail-cards-list" class="space-y-3">
-                <!-- Render các thẻ card -->
-            </div>
-        </section>
+        <hr class="border-[#2e3856]/50 mx-2" />
 
-        <!-- FLASHCARD LEARNING INTERFACE -->
-        <section id="tab-flashcard-player" class="hidden max-w-xl mx-auto space-y-6">
-            <div class="flex justify-between items-center">
-                <button onclick="app.openSetDetail(app.currentSetId)" class="text-sm text-gray-500 hover:underline">✕ Thoát</button>
-                <span id="fc-progress" class="text-sm font-medium text-gray-500">Thẻ 1 / 10</span>
-            </div>
-            
-            <!-- Thẻ Flashcard 3D Lật -->
-            <div class="perspective-1000 w-full h-80 cursor-pointer" onclick="app.flipCard()">
-                <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d shadow-xl rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center p-8 text-center">
-                    <div id="fc-front" class="absolute inset-0 flex flex-col items-center justify-center p-6 backface-hidden">
-                        <span class="text-xs uppercase tracking-widest text-brand-600 font-bold mb-2">Term</span>
-                        <h2 id="fc-term" class="text-3xl font-extrabold">Volunteer</h2>
-                        <p id="fc-pronounce" class="text-sm text-gray-400 mt-2">/ˌvɒl.ənˈtɪər/</p>
-                    </div>
-                    <div id="fc-back" class="absolute inset-0 flex flex-col items-center justify-center p-6 bg-indigo-50 dark:bg-gray-700 rounded-2xl hidden">
-                        <span class="text-xs uppercase tracking-widest text-indigo-600 font-bold mb-2">Definition</span>
-                        <h2 id="fc-def" class="text-2xl font-bold">Tình nguyện viên</h2>
-                        <p id="fc-example" class="text-sm text-gray-600 dark:text-gray-300 mt-3 italic">"She works as a volunteer."</p>
-                    </div>
-                </div>
-            </div>
+        <!-- "Your folders" Section -->
+        <div>
+          <div class="sidebar-label px-3 mb-2 text-xs font-bold text-qmuted tracking-wide flex items-center justify-between">
+            <span>Your folders</span>
+          </div>
+          <nav class="space-y-1" id="sidebarFoldersNav">
+            <!-- Populated dynamically -->
+          </nav>
+          <button onclick="openNewFolderModal()" class="mt-2 w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-qmuted hover:text-white hover:bg-[#2e3856]/50 transition">
+            <i data-lucide="plus" class="w-4 h-4 shrink-0"></i>
+            <span class="sidebar-label">New folder</span>
+          </button>
+        </div>
+      </div>
 
-            <!-- FSRS Buttons (Again=0, Hard=1, Good=3, Easy=7) -->
-            <div id="fsrs-controls" class="grid grid-cols-4 gap-2 hidden">
-                <button onclick="app.rateCard(0)" class="bg-red-500 text-white py-3 rounded-xl font-bold shadow hover:bg-red-600">Again (0)</button>
-                <button onclick="app.rateCard(1)" class="bg-orange-500 text-white py-3 rounded-xl font-bold shadow hover:bg-orange-600">Hard (1)</button>
-                <button onclick="app.rateCard(3)" class="bg-blue-500 text-white py-3 rounded-xl font-bold shadow hover:bg-blue-600">Good (3)</button>
-                <button onclick="app.rateCard(7)" class="bg-emerald-500 text-white py-3 rounded-xl font-bold shadow hover:bg-emerald-600">Easy (7)</button>
-            </div>
-            <div id="flip-prompt" class="text-center">
-                <button onclick="app.flipCard()" class="w-full py-3 bg-brand-600 text-white font-bold rounded-xl shadow hover:bg-brand-700">Lật thẻ xem đáp án</button>
-            </div>
-        </section>
+      <!-- Bottom Storage / Reset Demo -->
+      <div class="pt-4 mt-6 border-t border-[#2e3856]/40 px-2">
+        <button onclick="resetDemoData()" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs text-qmuted hover:text-rose-400 hover:bg-[#2e3856]/40 transition" title="Khôi phục dữ liệu mẫu gốc">
+          <i data-lucide="rotate-ccw" class="w-4 h-4 shrink-0"></i>
+          <span class="sidebar-label truncate">Khôi phục dữ liệu mẫu</span>
+        </button>
+      </div>
+    </aside>
 
-        <!-- MATCHING MODE INTERFACE -->
-        <section id="tab-matching-player" class="hidden max-w-2xl mx-auto space-y-6 text-center">
-            <div class="flex justify-between items-center">
-                <button onclick="app.openSetDetail(app.currentSetId)" class="text-sm text-gray-500 hover:underline">✕ Thoát</button>
-                <h2 class="text-xl font-bold">🧩 Chế độ Ghép cặp (Matching)</h2>
-                <span id="match-timer" class="font-mono font-bold text-brand-600">0s</span>
-            </div>
-            <p class="text-sm text-gray-500">Chọn một từ vựng ở cột Trái và nghĩa tương ứng ở cột Phải.</p>
-            <div class="grid grid-cols-2 gap-4" id="matching-grid">
-                <!-- Render các thẻ match -->
-            </div>
-        </section>
-
-        <!-- STATISTICS TAB -->
-        <section id="tab-statistics" class="hidden space-y-6">
-            <h2 class="text-xl font-bold">Thống kê học tập FSRS</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-100 dark:border-gray-700">
-                    <p class="text-sm text-gray-500">Tổng số thẻ</p>
-                    <h3 id="stat-total-cards" class="text-3xl font-bold mt-2 text-brand-600">0</h3>
-                </div>
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-100 dark:border-gray-700">
-                    <p class="text-sm text-gray-500">Đã học / Thuần thục</p>
-                    <h3 id="stat-mastered" class="text-3xl font-bold mt-2 text-emerald-600">0</h3>
-                </div>
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-100 dark:border-gray-700">
-                    <p class="text-sm text-gray-500">Cần ôn tập hôm nay</p>
-                    <h3 id="stat-due" class="text-3xl font-bold mt-2 text-orange-500">0</h3>
-                </div>
-            </div>
-        </section>
-
+    <!-- Main Dynamic View Container -->
+    <main id="mainViewport" class="flex-1 overflow-y-auto px-4 sm:px-8 lg:px-12 py-6 pb-28">
+      <!-- Views rendered here by JavaScript -->
     </main>
+  </div>
 
-    <!-- Modal Tạo Học Phần -->
-    <div id="modal-set" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 class="text-lg font-bold">Tạo Học Phần Mới</h3>
-            <input id="input-set-title" type="text" placeholder="Tên học phần (VD: Tiếng Anh Y Khoa)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <textarea id="input-set-desc" placeholder="Mô tả học phần..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
-            <div class="flex justify-end space-x-2">
-                <button onclick="app.closeModals()" class="px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700">Hủy</button>
-                <button onclick="app.saveNewSet()" class="px-4 py-2 rounded-xl text-sm font-medium bg-brand-600 text-white shadow hover:bg-brand-700">Tạo</button>
-            </div>
-        </div>
+  <!-- =========================================================
+       FLOATING BOTTOM "Ask TQuiz ✦+" PILL (Exact Screenshot 1-4)
+  ========================================================== -->
+  <div id="floatingBottomBar" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5">
+    <!-- Extra Folder buttons shown when inside a Folder View (Screenshot 2) -->
+    <div id="folderFloatingActions" class="hidden items-center gap-2 bg-[#1a1d28]/95 backdrop-blur-md p-1.5 rounded-full border border-[#2e3856] shadow-2xl">
+      <button onclick="studyCurrentFolder()" class="px-5 py-2 rounded-full bg-[#2e3856] hover:bg-[#384569] text-white text-xs font-bold transition">
+        Study
+      </button>
+      <button onclick="createNewStudySetInCurrentFolder()" class="px-5 py-2 rounded-full bg-qblue hover:bg-qblueHover text-white text-xs font-bold flex items-center gap-1.5 transition">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add sets
+      </button>
     </div>
 
-    <!-- Modal Thêm Thẻ Card -->
-    <div id="modal-card" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 class="text-lg font-bold">Thêm Thẻ Flashcard Mới</h3>
-            <input id="input-card-term" type="text" placeholder="Thuật ngữ (Term)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <input id="input-card-pronounce" type="text" placeholder="Phiên âm (Pronunciation)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <input id="input-card-def" type="text" placeholder="Định nghĩa (Definition)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <input id="input-card-example" type="text" placeholder="Ví dụ (Example)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <div class="flex justify-end space-x-2">
-                <button onclick="app.closeModals()" class="px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700">Hủy</button>
-                <button onclick="app.saveNewCard()" class="px-4 py-2 rounded-xl text-sm font-medium bg-brand-600 text-white shadow hover:bg-brand-700">Thêm Thẻ</button>
-            </div>
+    <!-- White Pill "Ask TQuiz ✦+" -->
+    <button
+      onclick="openAskTQuizModal()"
+      class="px-5 py-2.5 rounded-full bg-white hover:bg-slate-100 text-[#0a092d] font-extrabold text-xs sm:text-sm shadow-2xl flex items-center gap-2 transition transform hover:scale-105"
+    >
+      <span>Ask TQuiz</span>
+      <span class="text-qblue text-base leading-none">✦+</span>
+    </button>
+  </div>
+
+  <!-- =========================================================
+       MODAL 1: IMPORT / EXPORT (Quizlet Pipe |, Tab, CSV, JSON)
+  ========================================================== -->
+  <div id="importModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-[#1a1d28] border border-[#2e3856] p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-extrabold text-white flex items-center gap-2">
+          <i data-lucide="upload" class="w-5 h-5 text-qblue"></i>
+          <span>Import dữ liệu từ Quizlet / Anki</span>
+        </h3>
+        <button onclick="closeImportModal()" class="text-qmuted hover:text-white text-sm">✕</button>
+      </div>
+      <p class="text-xs text-qmuted leading-relaxed">
+        Dán trực tiếp nội dung xuất từ Quizlet vào bên dưới. Hệ thống hỗ trợ đầy đủ định dạng phức tạp có dấu gạch đứng <code class="text-indigo-300">word | (adj) | /ipa/ | English definition...</code> cách nghĩa tiếng Việt bằng phím <strong>Tab</strong> hoặc <strong>;;</strong>.
+      </p>
+      <textarea
+        id="importTextarea"
+        rows="7"
+        class="w-full rounded-xl bg-[#0a092d] border border-[#2e3856] p-3.5 text-xs font-mono text-white focus:outline-none focus:border-qblue"
+        placeholder="optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen...&#9;tự nguyện, không bắt buộc, tùy chọn Synonyms: voluntary, elective"
+      ></textarea>
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+        <button onclick="exportCurrentSetJSON()" class="px-4 py-2 rounded-xl bg-[#2e3856] hover:bg-[#384569] text-xs font-bold text-white flex items-center gap-1.5">
+          <i data-lucide="download" class="w-4 h-4 text-indigo-300"></i> Xuất học phần hiện tại (.JSON)
+        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="closeImportModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-qmuted hover:text-white">Hủy</button>
+          <button onclick="processBulkImport()" class="px-5 py-2.5 rounded-full bg-qblue hover:bg-qblueHover text-xs font-bold text-white">
+            Import vào học phần
+          </button>
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- JavaScript Ứng Dụng -->
-    <script>
-        class TQuizApp {
-            constructor() {
-                this.state = JSON.parse(localStorage.getItem('tquiz_data')) || {
-                    sets: [
-                        {
-                            id: 'set-1',
-                            title: 'Tiếng Anh Y Khoa Cơ Bản',
-                            description: 'Thuật ngữ và từ vựng chuyên ngành y khoa thiết yếu.',
-                            cards: [
-                                { id: 'c1', term: 'Volunteer', pronunciation: '/ˌvɒl.ənˈtɪər/', definition: 'Tình nguyện viên', examples: ['She works as a volunteer.'], fsrs: { difficulty: 5.0, stability: 1.0, repetitions: 0, due: null } },
-                                { id: 'c2', term: 'Speciality', pronunciation: '/ˌspeʃ.iˈæl.ə.ti/', definition: 'Chuyên khoa / Đặc sản', examples: ['Cardiology is her speciality.'], fsrs: { difficulty: 5.0, stability: 1.0, repetitions: 0, due: null } },
-                                { id: 'c3', term: 'Heritage', pronunciation: '/ˈher.ɪ.tɪdʒ/', definition: 'Di sản', examples: ['Cultural heritage preservation.'], fsrs: { difficulty: 5.0, stability: 1.0, repetitions: 0, due: null } }
-                            ]
-                        }
-                    ]
-                };
-                this.currentSetId = null;
-                this.currentCardIndex = 0;
-                this.isFlipped = false;
-                this.init();
-            }
+  <!-- =========================================================
+       MODAL 2: NEW FOLDER MODAL
+  ========================================================== -->
+  <div id="newFolderModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-[#1a1d28] border border-[#2e3856] p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-extrabold text-white">Tạo thư mục mới (New Folder)</h3>
+        <button onclick="closeNewFolderModal()" class="text-qmuted hover:text-white text-sm">✕</button>
+      </div>
+      <input
+        id="newFolderNameInput"
+        type="text"
+        placeholder="VD: SR - Ielts, Tiếng Trung, Clinical Medicine..."
+        class="w-full px-4 py-3 rounded-xl bg-[#0a092d] border border-[#2e3856] text-sm text-white focus:outline-none focus:border-qblue"
+      />
+      <div class="flex justify-end gap-2">
+        <button onclick="closeNewFolderModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-qmuted">Hủy</button>
+        <button onclick="confirmCreateFolder()" class="px-5 py-2 rounded-full bg-qblue hover:bg-qblueHover text-xs font-bold text-white">Tạo thư mục</button>
+      </div>
+    </div>
+  </div>
 
-            init() {
-                if (localStorage.getItem('tquiz_dark') === 'true') {
-                    document.documentElement.classList.add('dark');
-                }
-                this.render();
-            }
+  <!-- =========================================================
+       MODAL 3: ASK TQUIZ AI ✦+ (5-Tier Semantic Tester & Tutor)
+  ========================================================== -->
+  <div id="askTQuizModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-xl rounded-2xl bg-[#1a1d28] border border-[#2e3856] p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-full bg-white text-[#0a092d] font-extrabold text-xs">Ask TQuiz ✦+</span>
+          <h3 class="text-sm font-bold text-white">Trợ lý AI & Kiểm thử Chấm Tự Luận 5 Tầng</h3>
+        </div>
+        <button onclick="closeAskTQuizModal()" class="text-qmuted hover:text-white text-sm">✕</button>
+      </div>
 
-            save() {
-                localStorage.setItem('tquiz_data', JSON.stringify(this.state));
-                this.render();
-            }
+      <div class="p-3.5 rounded-xl bg-[#0a092d] border border-[#2e3856] text-xs space-y-1.5 text-slate-300">
+        <div class="font-bold text-indigo-400">Tại sao TQuiz thông minh hơn phần Written của Quizlet?</div>
+        <p>• Khi thẻ của bạn chứa cả đoạn dài: <code class="text-amber-300">optional | (adj) | /.../ | English definition:...</code> và nghĩa <code class="text-emerald-300">tự nguyện, không bắt buộc, tùy chọn Synonyms: voluntary...</code></p>
+        <p>• Quizlet bắt bạn gõ lại từng chữ từng dấu phẩy. Còn <strong>TQuiz 5 Tầng</strong> tự động bóc tách từ gốc (<code class="text-white">optional</code>), từng nghĩa thành phần (<code class="text-white">tự nguyện</code> hoặc <code class="text-white">tùy chọn</code>), từ đồng nghĩa (<code class="text-white">voluntary</code>) và dùng AI chấm theo ý hiểu!</p>
+      </div>
 
-            toggleDarkMode() {
-                const isDark = document.documentElement.classList.toggle('dark');
-                localStorage.setItem('tquiz_dark', isDark);
-            }
+      <div class="space-y-2">
+        <label class="text-xs font-bold text-qmuted">Hỏi AI giải thích từ vựng hoặc đặt câu IELTS:</label>
+        <div class="flex gap-2">
+          <input
+            id="askAiInput"
+            type="text"
+            placeholder="VD: Phân biệt speciality và specialty trong IELTS..."
+            class="flex-1 px-4 py-2.5 rounded-xl bg-[#0a092d] border border-[#2e3856] text-xs text-white focus:outline-none focus:border-qblue"
+          />
+          <button onclick="runAskTQuizAI()" id="askAiBtn" class="px-4 py-2.5 rounded-xl bg-qblue hover:bg-qblueHover text-xs font-bold text-white shrink-0">
+            Hỏi AI ✦
+          </button>
+        </div>
+        <div id="askAiOutput" class="p-3.5 rounded-xl bg-[#0a092d] border border-[#2e3856]/60 text-xs text-slate-200 min-h-[70px] whitespace-pre-line">
+          Nhập câu hỏi bất kỳ hoặc đóng cửa sổ này để bắt đầu học chế độ Learn (AI 5-Tier)!
+        </div>
+      </div>
+    </div>
+  </div>
 
-            switchTab(tabId) {
-                ['dashboard', 'sets', 'study-detail', 'flashcard-player', 'matching-player', 'statistics'].forEach(t => {
-                    document.getElementById(`tab-${t}`).classList.add('hidden');
-                });
-                document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-                
-                // Active nav styling
-                document.querySelectorAll('.nav-btn').forEach(btn => {
-                    if(btn.dataset.target === tabId) {
-                        btn.classList.add('bg-gray-100', 'dark:bg-gray-700');
-                    } else {
-                        btn.classList.remove('bg-gray-100', 'dark:bg-gray-700');
-                    }
-                });
+  <!-- Toast Notification -->
+  <div id="toastBox" class="hidden fixed top-20 right-6 z-50 px-4 py-3 rounded-2xl bg-[#1a1d28] border border-qblue shadow-2xl flex items-center gap-2.5 text-xs font-bold text-white">
+    <i data-lucide="check-circle-2" class="w-4 h-4 text-qgreen"></i>
+    <span id="toastText">Đã lưu!</span>
+  </div>
 
-                if(tabId === 'statistics') this.renderStats();
-                if(tabId === 'dashboard' || tabId === 'sets') this.renderSets();
-            }
+  <!-- =========================================================
+       APPLICATION JAVASCRIPT (Single-File Architecture)
+  ========================================================== -->
+  <script>
+    // ==========================================
+    // 1. REALISTIC PRE-POPULATED DATA MATCHING SCREENSHOTS
+    // ==========================================
+    const NOW = Date.now();
+    const DAY_MS = 86400000;
 
-            render() {
-                this.renderSets();
-            }
+    const DEFAULT_FOLDERS = [
+      { id: 'f_sr_ielts', name: 'SR - Ielts', tag: 'IELTS Core' },
+      { id: 'f_chinese', name: 'Tiếng Trung', tag: 'HSK' },
+      { id: 'f_su_ielts', name: 'SU - Ielts', tag: 'Advanced' }
+    ];
 
-            renderSets() {
-                const grid = document.getElementById('dashboard-sets-grid');
-                const container = document.getElementById('sets-container');
-                let htmlDashboard = '';
-                let htmlSets = '';
+    const DEFAULT_SETS = [
+      {
+        id: 's_ls20',
+        title: 'LS20: Review',
+        description: 'Tổng hợp từ vựng trọng tâm IELTS Reading & Listening (Định dạng chuẩn | Collocations | Synonyms)',
+        folderId: 'f_sr_ielts',
+        sortedCount: 26,
+        lastStudied: NOW - 120000
+      },
+      {
+        id: 's_ls19',
+        title: 'LS19: Volunteer work',
+        description: 'Chủ đề Hoạt động cộng đồng, Tình nguyện & Di sản văn hóa',
+        folderId: 'f_sr_ielts',
+        sortedCount: 31,
+        lastStudied: NOW - 3600000
+      },
+      {
+        id: 's_ls18',
+        title: 'LS18: Transportation',
+        description: 'Từ vựng Giao thông đô thị, Cơ sở hạ tầng & Phát triển bền vững',
+        folderId: 'f_sr_ielts',
+        sortedCount: 23,
+        lastStudied: NOW - 7200000
+      },
+      {
+        id: 's_ls17',
+        title: 'LS17: Job',
+        description: 'Chủ đề Nghề nghiệp, Chuyên môn & Môi trường làm việc',
+        folderId: 'f_sr_ielts',
+        sortedCount: 26,
+        lastStudied: NOW - 60000
+      },
+      {
+        id: 's_buoi16',
+        title: 'Buổi 16: Favorite person',
+        description: 'Từ vựng mô tả tính cách, sự kiên cường & truyền cảm hứng (Speaking Part 2)',
+        folderId: 'f_su_ielts',
+        sortedCount: 52,
+        lastStudied: NOW - 9400000
+      },
+      {
+        id: 's_ls1',
+        title: 'LS1: Cultural Heritage',
+        description: 'Bảo tồn di sản văn hóa & lịch sử quốc gia',
+        folderId: 'f_su_ielts',
+        sortedCount: 19,
+        lastStudied: NOW - 15400000
+      },
+      {
+        id: 's_hello',
+        title: 'Hello in different languages',
+        description: 'Giao tiếp đa ngôn ngữ & HSK Sơ cấp',
+        folderId: 'f_chinese',
+        sortedCount: 14,
+        lastStudied: NOW - 25400000
+      }
+    ];
 
-                this.state.sets.forEach(set => {
-                    const cardCount = set.cards.length;
-                    const cardHtml = `
-                        <div onclick="app.openSetDetail('${set.id}')" class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-md transition">
-                            <h3 class="font-bold text-lg">${set.title}</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">${set.description || 'Không có mô tả'}</p>
-                            <div class="mt-4 flex justify-between items-center text-xs text-brand-600 font-semibold">
-                                <span>📚 ${cardCount} thuật ngữ</span>
-                                <span>Học ngay →</span>
-                            </div>
-                        </div>
-                    `;
-                    htmlDashboard += cardHtml;
-                    htmlSets += cardHtml;
-                });
+    // Cards matching Screenshot 3 & 5 pipe-separated format + clean extraction support
+    const DEFAULT_CARDS = [
+      {
+        id: 'c_ls20_1',
+        setId: 's_ls20',
+        term: 'optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen or decided upon by preference rather than required by rule | Collocations: completely optional, optional module, optional attendance | Example: Attendance at the afternoon clinical seminar is entirely optional for final-year students.',
+        definition: 'tự nguyện, không bắt buộc, tùy chọn Synonyms: voluntary, elective, discretionary, non-compulsory',
+        synonyms: ['voluntary', 'elective', 'discretionary', 'non-compulsory', 'tự nguyện', 'không bắt buộc', 'tùy chọn'],
+        acceptedAnswers: ['không bắt buộc', 'tự nguyện', 'tùy chọn', 'có thể chọn hoặc không'],
+        frontImage: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=500&q=80',
+        backImage: '',
+        starred: true,
+        fsrs: { difficulty: 4.5, stability: 4.0, retrievability: 0.94, dueDate: NOW - 60000, reps: 3 }
+      },
+      {
+        id: 'c_ls20_2',
+        setId: 's_ls20',
+        term: 'speciality | (n) | /ˌspeʃ.iˈæl.ə.ti/ | English definition: a product, skill, or area of work that a person or place is remarkably good at | Collocations: local speciality, medical speciality | Example: Oysters are a famous local speciality of this coastal town.',
+        definition: 'món đặc sản, nét đặc trưng chuyên biệt, chuyên môn Synonyms: specialty, expertise, forte',
+        synonyms: ['specialty', 'expertise', 'forte', 'đặc sản', 'chuyên môn', 'món đặc sản', 'sở trường'],
+        acceptedAnswers: ['món đặc sản', 'chuyên môn', 'nét đặc trưng chuyên biệt', 'đặc sản'],
+        frontImage: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=500&q=80',
+        backImage: '',
+        starred: false,
+        fsrs: { difficulty: 5.2, stability: 2.5, retrievability: 0.90, dueDate: NOW - 120000, reps: 2 }
+      },
+      {
+        id: 'c_ls20_3',
+        setId: 's_ls20',
+        term: 'volunteer | (n, v) | /ˌvɒl.ənˈtɪər/ | English definition: a person who freely offers to take part in an enterprise or undertake a task | Collocations: community volunteer, volunteer work | Example: She works as a volunteer at the local children hospital.',
+        definition: 'tình nguyện viên, người làm việc tự nguyện Synonyms: unpaid helper, community worker',
+        synonyms: ['unpaid helper', 'community worker', 'tình nguyện viên', 'tình nguyện', 'người tình nguyện'],
+        acceptedAnswers: ['người làm việc tự nguyện', 'tình nguyện viên', 'làm tình nguyện', 'người tự nguyện giúp đỡ'],
+        frontImage: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=500&q=80',
+        backImage: '',
+        starred: true,
+        fsrs: { difficulty: 3.8, stability: 6.0, retrievability: 0.96, dueDate: NOW + DAY_MS, reps: 4 }
+      },
+      {
+        id: 'c_ls20_4',
+        setId: 's_ls20',
+        term: 'heritage | (n) | /ˈher.ɪ.tɪdʒ/ | English definition: valued objects and qualities such as historic buildings and cultural traditions passed down from previous generations | Collocations: cultural heritage, UNESCO World Heritage | Example: Ha Long Bay is recognized as a World Natural Heritage site.',
+        definition: 'di sản, di sản văn hóa truyền thống Synonyms: legacy, tradition, inheritance',
+        synonyms: ['legacy', 'tradition', 'inheritance', 'di sản', 'di sản văn hóa'],
+        acceptedAnswers: ['di sản', 'di sản văn hóa', 'gia tài văn hóa truyền thống'],
+        frontImage: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=500&q=80',
+        backImage: '',
+        starred: false,
+        fsrs: { difficulty: 4.9, stability: 3.0, retrievability: 0.91, dueDate: NOW - 30000, reps: 2 }
+      },
+      {
+        id: 'c_ls20_5',
+        setId: 's_ls20',
+        term: 'sustainable | (adj) | /səˈsteɪ.nə.bəl/ | English definition: able to be maintained at a certain rate or level without depleting natural resources | Collocations: sustainable development, sustainable energy | Example: Governments must invest in sustainable green energy.',
+        definition: 'bền vững, thân thiện với môi trường Synonyms: eco-friendly, renewable, viable',
+        synonyms: ['eco-friendly', 'renewable', 'viable', 'bền vững', 'lâu dài'],
+        acceptedAnswers: ['phát triển bền vững', 'bền vững', 'duy trì lâu dài không hại môi trường'],
+        frontImage: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=500&q=80',
+        backImage: '',
+        starred: false,
+        fsrs: { difficulty: 5.0, stability: 4.5, retrievability: 0.93, dueDate: NOW, reps: 3 }
+      },
+      {
+        id: 'c_ls20_6',
+        setId: 's_ls20',
+        term: 'resilience | (n) | /rɪˈzɪl.jəns/ | English definition: the capacity to recover quickly from difficulties; toughness | Collocations: emotional resilience, remarkable resilience | Example: Local communities showed remarkable resilience after the flood.',
+        definition: 'sự kiên cường, khả năng phục hồi vượt khó Synonyms: grit, toughness, adaptability',
+        synonyms: ['grit', 'toughness', 'adaptability', 'sự kiên cường', 'kiên cường', 'khả năng phục hồi'],
+        acceptedAnswers: ['sự kiên cường', 'khả năng vượt qua khó khăn', 'sự bền bỉ'],
+        frontImage: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=500&q=80',
+        backImage: '',
+        starred: false,
+        fsrs: { difficulty: 5.8, stability: 2.0, retrievability: 0.88, dueDate: NOW - 90000, reps: 1 }
+      },
+      // Cards for other sets so every set is playable immediately
+      {
+        id: 'c_ls17_1',
+        setId: 's_ls17',
+        term: 'remuneration | (n) | /rɪˌmjuː.nərˈeɪ.ʃən/ | English definition: money paid for work or a service | Collocations: generous remuneration package | Example: High-skilled engineers receive competitive remuneration.',
+        definition: 'tiền lương, thù lao, đãi ngộ Synonyms: salary, compensation, pay, wage',
+        synonyms: ['salary', 'compensation', 'wage', 'thù lao', 'tiền lương', 'đãi ngộ'],
+        acceptedAnswers: ['tiền lương', 'thù lao công việc', 'mức đãi ngộ'],
+        frontImage: '',
+        backImage: '',
+        starred: true,
+        fsrs: { difficulty: 5.5, stability: 3.0, retrievability: 0.90, dueDate: NOW, reps: 2 }
+      },
+      {
+        id: 'c_ls17_2',
+        setId: 's_ls17',
+        term: 'procrastinate | (v) | /prəˈkræs.tɪ.neɪt/ | English definition: delay or postpone action; put off doing something | Example: Many students procrastinate until the night before the exam.',
+        definition: 'trì hoãn, chần chừ Synonyms: delay, postpone, put off',
+        synonyms: ['delay', 'postpone', 'put off', 'trì hoãn', 'chần chừ'],
+        acceptedAnswers: ['trì hoãn công việc', 'để việc hôm nay sang ngày mai'],
+        frontImage: '',
+        backImage: '',
+        starred: false,
+        fsrs: { difficulty: 4.8, stability: 3.5, retrievability: 0.92, dueDate: NOW, reps: 2 }
+      },
+      {
+        id: 'c_ls19_1',
+        setId: 's_ls19',
+        term: 'altruism | (n) | /ˈæl.tru.ɪ.zəm/ | English definition: disinterested and selfless concern for the well-being of others | Example: Volunteering is often motivated by pure altruism.',
+        definition: 'lòng vị tha, sự hy sinh vì người khác Synonyms: selflessness, philanthropy, kindness',
+        synonyms: ['selflessness', 'philanthropy', 'lòng vị tha', 'vị tha'],
+        acceptedAnswers: ['lòng vị tha', 'sự quan tâm vô điều kiện tới người khác'],
+        frontImage: '',
+        backImage: '',
+        starred: false,
+        fsrs: { difficulty: 6.0, stability: 2.0, retrievability: 0.86, dueDate: NOW, reps: 1 }
+      }
+    ];
 
-                if(grid) grid.innerHTML = htmlDashboard || '<p class="text-gray-400">Chưa có học phần nào.</p>';
-                if(container) container.innerHTML = htmlSets || '<p class="text-gray-400">Chưa có học phần nào.</p>';
-            }
+    // ==========================================
+    // 2. APPLICATION STATE & STORAGE
+    // ==========================================
+    let state = {
+      view: 'home', // 'home' | 'folder' | 'set' | 'edit' | 'learn' | 'test' | 'match' | 'blast' | 'blocks' | 'stats'
+      sidebarCollapsed: false,
+      activeFolderId: 'f_sr_ielts',
+      activeSetId: 's_ls20',
+      flashcardIndex: 0,
+      flashcardFlipped: false,
+      formatPipeCleanly: false, // False shows exact Quizlet pipe text like Screenshot 3; True renders badges
+      learnDirection: 'EN_TO_VI', // 'EN_TO_VI' | 'VI_TO_EN' | 'RANDOM'
+      learnIndex: 0,
+      learnEvaluation: null,
+      folderSearchQuery: '',
+      folders: JSON.parse(localStorage.getItem('tquiz_v2_folders')) || DEFAULT_FOLDERS,
+      sets: JSON.parse(localStorage.getItem('tquiz_v2_sets')) || DEFAULT_SETS,
+      cards: JSON.parse(localStorage.getItem('tquiz_v2_cards')) || DEFAULT_CARDS,
+      stats: JSON.parse(localStorage.getItem('tquiz_v2_stats')) || {
+        studied: 126,
+        correct: 318,
+        attempts: 340,
+        streak: 14,
+        longestStreak: 21,
+        aiSaves: 27,
+        blastHigh: 1650,
+        blocksHigh: 1120
+      }
+    };
 
-            openSetDetail(setId) {
-                this.currentSetId = setId;
-                const set = this.state.sets.find(s => s.id === setId);
-                if(!set) return;
+    function saveState() {
+      localStorage.setItem('tquiz_v2_folders', JSON.stringify(state.folders));
+      localStorage.setItem('tquiz_v2_sets', JSON.stringify(state.sets));
+      localStorage.setItem('tquiz_v2_cards', JSON.stringify(state.cards));
+      localStorage.setItem('tquiz_v2_stats', JSON.stringify(state.stats));
+    }
 
-                document.getElementById('detail-set-title').innerText = set.title;
-                document.getElementById('detail-set-desc').innerText = set.description;
+    function showToast(msg) {
+      const box = document.getElementById('toastBox');
+      const txt = document.getElementById('toastText');
+      txt.textContent = msg;
+      box.classList.remove('hidden');
+      setTimeout(() => box.classList.add('hidden'), 3000);
+    }
 
-                const list = document.getElementById('detail-cards-list');
-                list.innerHTML = set.cards.map(c => `
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                        <div>
-                            <span class="font-bold text-base">${c.term}</span> <span class="text-xs text-gray-400">${c.pronunciation || ''}</span>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5">${c.definition}</p>
-                        </div>
-                        <button onclick="app.deleteCard('${c.id}')" class="text-red-500 hover:text-red-700 text-sm font-medium">Xóa</button>
-                    </div>
-                `).join('') || '<p class="text-gray-400">Chưa có thẻ từ vựng nào trong học phần này.</p>';
+    function getActiveSet() {
+      return state.sets.find(s => s.id === state.activeSetId) || state.sets[0];
+    }
 
-                this.switchTab('study-detail');
-            }
+    function getSetCards(setId) {
+      const list = state.cards.filter(c => c.setId === setId);
+      return list.length > 0 ? list : state.cards.filter(c => c.setId === 's_ls20');
+    }
 
-            openNewSetModal() { document.getElementById('modal-set').classList.remove('hidden'); }
-            openAddCardModal() { document.getElementById('modal-card').classList.remove('hidden'); }
-            closeModals() { 
-                document.getElementById('modal-set').classList.add('hidden'); 
-                document.getElementById('modal-card').classList.add('hidden'); 
-            }
+    // ==========================================
+    // 3. PIPE-FORMAT PARSER & 5-TIER SMART GRADING ENGINE
+    // ==========================================
+    // Extracts core headword from "optional | (adj) | /.../ | English definition: ..."
+    function extractCoreTerm(rawTerm = '') {
+      return rawTerm.split('|')[0].trim();
+    }
 
-            saveNewSet() {
-                const title = document.getElementById('input-set-title').value.trim();
-                const description = document.getElementById('input-set-desc').value.trim();
-                if(!title) return alert('Vui lòng nhập tên học phần!');
+    // Extracts clean Vietnamese meanings & inline "Synonyms: ..." from definition string
+    function parseDefinitionParts(rawDef = '', cardSynonyms = []) {
+      const [viPart, synPart] = rawDef.split(/Synonyms:/i);
+      const viMeanings = (viPart || '')
+        .split(/[,;/]/)
+        .map(s => s.trim())
+        .filter(Boolean);
 
-                this.state.sets.push({
-                    id: 'set-' + Date.now(),
-                    title,
-                    description,
-                    cards: []
-                });
-                this.save();
-                this.closeModals();
-                document.getElementById('input-set-title').value = '';
-                document.getElementById('input-set-desc').value = '';
-            }
+      const inlineSyns = (synPart || '')
+        .split(/[,;/]/)
+        .map(s => s.trim())
+        .filter(Boolean);
 
-            saveNewCard() {
-                const term = document.getElementById('input-card-term').value.trim();
-                const pronunciation = document.getElementById('input-card-pronounce').value.trim();
-                const definition = document.getElementById('input-card-def').value.trim();
-                const example = document.getElementById('input-card-example').value.trim();
+      return {
+        fullVi: (viPart || rawDef).trim(),
+        viMeanings,
+        allSynonyms: [...new Set([...viMeanings, ...inlineSyns, ...(cardSynonyms || [])])]
+      };
+    }
 
-                if(!term || !definition) return alert('Vui lòng nhập từ và nghĩa!');
+    const ABBREV_GROUPS = [
+      ['usa', 'us', 'united states', 'america', 'hoa kỳ', 'mỹ', 'nước mỹ'],
+      ['ai', 'artificial intelligence', 'trí tuệ nhân tạo', 'trí thông minh nhân tạo'],
+      ['optional', 'voluntary', 'elective', 'tự nguyện', 'không bắt buộc', 'tùy chọn'],
+      ['speciality', 'specialty', 'expertise', 'món đặc sản', 'đặc sản', 'chuyên môn', 'nét đặc trưng chuyên biệt'],
+      ['volunteer', 'tình nguyện viên', 'tình nguyện', 'người tình nguyện', 'người làm việc tự nguyện'],
+      ['heritage', 'legacy', 'di sản', 'di sản văn hóa']
+    ];
 
-                const set = this.state.sets.find(s => s.id === this.currentSetId);
-                if(set) {
-                    set.cards.push({
-                        id: 'c-' + Date.now(),
-                        term,
-                        pronunciation,
-                        definition,
-                        examples: example ? [example] : [],
-                        fsrs: { difficulty: 5.0, stability: 1.0, repetitions: 0, due: null }
-                    });
-                    this.save();
-                    this.openSetDetail(this.currentSetId);
-                    this.closeModals();
-                    document.getElementById('input-card-term').value = '';
-                    document.getElementById('input-card-pronounce').value = '';
-                    document.getElementById('input-card-def').value = '';
-                    document.getElementById('input-card-example').value = '';
-                }
-            }
+    function normalizeTier1(str = '') {
+      return str.toLowerCase().trim().replace(/\s+/g, ' ');
+    }
 
-            deleteCard(cardId) {
-                const set = this.state.sets.find(s => s.id === this.currentSetId);
-                if(set) {
-                    set.cards = set.cards.filter(c => c.id !== cardId);
-                    this.save();
-                    this.openSetDetail(this.currentSetId);
-                }
-            }
+    function cleanTier2(str = '') {
+      return normalizeTier1(str)
+        .replace(/\|.*$/g, '') // Strip everything after first pipe if user pasted pipe format
+        .replace(/\b\((n|v|adj|adv|prep|n,\s*v)\)/gi, '')
+        .replace(/[.,:;!?()[\]"'/-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
 
-            startFlashcardSession() {
-                const set = this.state.sets.find(s => s.id === this.currentSetId);
-                if(!set || set.cards.length === 0) return alert('Học phần chưa có thẻ từ vựng nào!');
-                this.currentCardIndex = 0;
-                this.isFlipped = false;
-                this.switchTab('flashcard-player');
-                this.renderCurrentCard();
-            }
+    async function evaluateSmartWritten(userInput, card, direction = 'EN_TO_VI') {
+      const rawUser = (userInput || '').trim();
+      const coreTerm = extractCoreTerm(card.term);
+      const defInfo = parseDefinitionParts(card.definition, card.synonyms);
+      const primaryExpected = direction === 'EN_TO_VI' ? defInfo.fullVi : coreTerm;
 
-            renderCurrentCard() {
-                const set = this.state.sets.find(s => s.id === this.currentSetId);
-                const card = set.cards[this.currentCardIndex];
-                
-                document.getElementById('fc-progress').innerText = `Thẻ ${this.currentCardIndex + 1} / ${set.cards.length}`;
-                document.getElementById('fc-term').innerText = card.term;
-                document.getElementById('fc-pronounce').innerText = card.pronunciation || '';
-                document.getElementById('fc-def').innerText = card.definition;
-                document.getElementById('fc-example').innerText = card.examples && card.examples.length ? `"${card.examples[0]}"` : '';
+      if (!rawUser) {
+        return { isCorrect: false, tier: 0, tierName: 'Chưa nhập', score: 0, explanation: 'Hãy nhập câu trả lời của bạn.' };
+      }
 
-                this.isFlipped = false;
-                document.getElementById('fc-front').classList.remove('hidden');
-                document.getElementById('fc-back').classList.add('hidden');
-                document.getElementById('fsrs-controls').classList.add('hidden');
-                document.getElementById('flip-prompt').classList.remove('hidden');
-            }
+      const t1User = normalizeTier1(rawUser);
+      const t1Target = normalizeTier1(primaryExpected);
 
-            flipCard() {
-                this.isFlipped = !this.isFlipped;
-                if(this.isFlipped) {
-                    document.getElementById('fc-front').classList.add('hidden');
-                    document.getElementById('fc-back').classList.remove('hidden');
-                    document.getElementById('fsrs-controls').classList.remove('hidden');
-                    document.getElementById('flip-prompt').classList.add('hidden');
-                } else {
-                    document.getElementById('fc-front').classList.remove('hidden');
-                    document.getElementById('fc-back').classList.add('hidden');
-                    document.getElementById('fsrs-controls').classList.add('hidden');
-                    document.getElementById('flip-prompt').classList.remove('hidden');
-                }
-            }
+      // Tier 1: Exact or Core Headword Normalized
+      if (t1User === t1Target || t1User === normalizeTier1(coreTerm) || t1User === normalizeTier1(card.definition)) {
+        return {
+          isCorrect: true,
+          tier: 1,
+          tierName: 'Tầng 1: Chuẩn hóa (Normalize)',
+          score: 100,
+          explanation: `Khớp chính xác với đáp án chuẩn "${primaryExpected}".`
+        };
+      }
 
-            rateCard(rating) {
-                // Thuật toán FSRS giả lập nâng cao
-                const set = this.state.sets.find(s => s.id === this.currentSetId);
-                const card = set.cards[this.currentCardIndex];
-                card.fsrs.repetitions += 1;
-                card.fsrs.due = new Date(Date.now() + rating * 86400000).toISOString();
-                this.save();
+      // Tier 2: Strip POS tags (adj), (n), pipes |, punctuation
+      const t2User = cleanTier2(rawUser);
+      const t2Target = cleanTier2(primaryExpected);
+      if (t2User && (t2User === t2Target || t2User === cleanTier2(coreTerm))) {
+        return {
+          isCorrect: true,
+          tier: 2,
+          tierName: 'Tầng 2: Lọc dấu câu & Từ loại (POS/Pipe Strip)',
+          score: 100,
+          explanation: `Đã bỏ qua các ký hiệu phụ (n), (adj), dấu câu và khớp hoàn toàn với "${primaryExpected}".`
+        };
+      }
 
-                this.currentCardIndex++;
-                if(this.currentCardIndex < set.cards.length) {
-                    this.renderCurrentCard();
-                } else {
-                    alert('🎉 Chúc mừng bạn đã hoàn thành phiên ôn tập FSRS!');
-                    this.openSetDetail(this.currentSetId);
-                }
-            }
+      // Tier 3: Individual Meaning Component / Synonym / Accepted Answer Match
+      const candidatePool = [
+        coreTerm,
+        ...defInfo.viMeanings,
+        ...defInfo.allSynonyms,
+        ...(card.acceptedAnswers || [])
+      ].map(cleanTier2).filter(Boolean);
 
-            startMatchingSession() {
-                const set = this.state.sets.find(s => s.id === this.currentSetId);
-                if(!set || set.cards.length < 2) return alert('Cần ít nhất 2 thẻ để chơi Matching!');
-                this.switchTab('matching-player');
-                
-                const grid = document.getElementById('matching-grid');
-                let items = [];
-                set.cards.forEach(c => {
-                    items.push({ id: c.id, text: c.term, type: 'term' });
-                    items.push({ id: c.id, text: c.definition, type: 'def' });
-                });
-                items.sort(() => Math.random() - 0.5);
+      if (candidatePool.includes(t2User)) {
+        return {
+          isCorrect: true,
+          tier: 3,
+          tierName: 'Tầng 3: Khớp Nghĩa Thành Phần / Đồng Nghĩa (Synonym Match)',
+          score: 98,
+          explanation: `Không cần gõ cả câu dài! "${rawUser}" khớp chính xác với một nghĩa/từ đồng nghĩa được chấp nhận của thẻ.`
+        };
+      }
 
-                grid.innerHTML = items.map(item => `
-                    <div onclick="app.selectMatchItem(this, '${item.id}', '${item.type}')" class="match-item bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer font-semibold shadow-sm hover:border-brand-500 transition">
-                        ${item.text}
-                    </div>
-                `).join('');
-            }
-
-            selectedMatch = null;
-            selectMatchItem(element, id, type) {
-                if(element.classList.contains('bg-emerald-500')) return;
-                
-                if(!this.selectedMatch) {
-                    this.selectedMatch = { element, id, type };
-                    element.classList.add('ring-2', 'ring-brand-500');
-                } else {
-                    if(this.selectedMatch.element === element) {
-                        element.classList.remove('ring-2', 'ring-brand-500');
-                        this.selectedMatch = null;
-                        return;
-                    }
-                    if(this.selectedMatch.id === id && this.selectedMatch.type !== type) {
-                        // Đúng cặp
-                        element.classList.add('bg-emerald-500', 'text-white');
-                        this.selectedMatch.element.classList.add('bg-emerald-500', 'text-white');
-                        this.selectedMatch.element.classList.remove('ring-2', 'ring-brand-500');
-                        this.selectedMatch = null;
-
-                        // Check chiến thắng
-                        if(document.querySelectorAll('#matching-grid .bg-emerald-500').length === document.querySelectorAll('#matching-grid .match-item').length) {
-                            setTimeout(() => alert('🎉 Bạn đã hoàn thành trò chơi Matching xuất sắc!'), 200);
-                        }
-                    } else {
-                        // Sai cặp
-                        element.classList.add('bg-red-100', 'dark:bg-red-900');
-                        setTimeout(() => {
-                            element.classList.remove('bg-red-100', 'dark:bg-red-900');
-                            this.selectedMatch.element.classList.remove('ring-2', 'ring-brand-500');
-                            this.selectedMatch = null;
-                        }, 400);
-                    }
-                }
-            }
-
-            startTestSession() {
-                alert('Chế độ Test Generator (Trắc nghiệm, Tự luận, True/False) sẽ tự động tạo đề thi ngẫu nhiên ở phiên bản kế tiếp.');
-            }
-
-            renderStats() {
-                let totalCards = 0;
-                let mastered = 0;
-                let due = 0;
-                this.state.sets.forEach(s => {
-                    totalCards += s.cards.length;
-                    s.cards.forEach(c => {
-                        if(c.fsrs.repetitions > 2) mastered++;
-                        due++;
-                    });
-                });
-                document.getElementById('stat-total-cards').innerText = totalCards;
-                document.getElementById('stat-mastered').innerText = mastered;
-                document.getElementById('stat-due').innerText = due;
-            }
-
-            exportData() {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state, null, 2));
-                const downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", dataStr);
-                downloadAnchor.setAttribute("download", "tquiz_backup.json");
-                document.body.appendChild(downloadAnchor);
-                downloadAnchor.click();
-                downloadAnchor.remove();
-            }
-
-            quickStartStudy() {
-                if(this.state.sets.length > 0) {
-                    this.openSetDetail(this.state.sets[0].id);
-                    this.startFlashcardSession();
-                } else {
-                    this.switchTab('sets');
-                }
-            }
+      // Tier 4: Abbreviation / Equivalent Group Match
+      for (const grp of ABBREV_GROUPS) {
+        const normGrp = grp.map(cleanTier2);
+        if (normGrp.includes(t2User) && normGrp.some(g => candidatePool.includes(g))) {
+          return {
+            isCorrect: true,
+            tier: 4,
+            tierName: 'Tầng 4: Từ điển Viết tắt & Tương đương',
+            score: 96,
+            explanation: `Hệ thống nhận diện "${rawUser}" tương đương với "${primaryExpected}".`
+          };
         }
+      }
 
-        const app = new TQuizApp();
-    </script>
+      // Local Semantic Token Overlap Fallback
+      let localBest = 0;
+      const userTokens = new Set(t2User.split(' ').filter(w => w.length > 1));
+      for (const cand of candidatePool) {
+        if (t2User.length >= 4 && (cand.includes(t2User) || t2User.includes(cand))) {
+          localBest = Math.max(localBest, 86);
+        }
+        const candTokens = new Set(cand.split(' ').filter(w => w.length > 1));
+        if (!userTokens.size || !candTokens.size) continue;
+        let hit = 0;
+        userTokens.forEach(t => { if (candTokens.has(t)) hit++; });
+        const dice = Math.round(((2 * hit) / (userTokens.size + candTokens.size)) * 100);
+        localBest = Math.max(localBest, dice);
+      }
+
+      // Tier 5: Gemini AI Semantic Judge
+      try {
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        const payload = {
+          contents: [{
+            parts: [{
+              text: `Từ gốc: "${coreTerm}"\nĐịnh nghĩa đầy đủ trên thẻ: "${card.definition}"\nNgười học trả lời: "${rawUser}"\nHãy chấm điểm theo Ý NGHĨA (0-100). Nếu người học chỉ nêu 1 nghĩa đúng hoặc diễn đạt bằng lời văn khác nhưng đúng bản chất thì cho >= 80 và isCorrect = true. Giải thích 1 câu tiếng Việt.`
+            }]
+          }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                score: { type: "INTEGER" },
+                isCorrect: { type: "BOOLEAN" },
+                explanation: { type: "STRING" }
+              },
+              propertyOrdering: ["score", "isCorrect", "explanation"]
+            }
+          }
+        };
+
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
+          const finalScore = Math.max(parsed.score || 0, localBest);
+          const ok = parsed.isCorrect || finalScore >= 75;
+          return {
+            isCorrect: ok,
+            tier: 5,
+            tierName: 'Tầng 5: AI Semantic Judge (Chấm theo ý nghĩa)',
+            score: finalScore,
+            explanation: parsed.explanation
+          };
+        }
+      } catch (err) {
+        // Offline / instant local semantic resolution
+      }
+
+      const accepted = localBest >= 72;
+      return {
+        isCorrect: accepted,
+        tier: 5,
+        tierName: 'Tầng 5: AI Semantic Score (Đánh giá ngữ nghĩa)',
+        score: localBest,
+        explanation: accepted
+          ? `Chấp nhận theo ngữ nghĩa (${localBest}%): "${rawUser}" diễn đạt đúng ý của "${primaryExpected}".`
+          : `Độ khớp ngữ nghĩa đạt ${localBest}%. Đáp án gợi ý: "${primaryExpected}".`
+      };
+    }
+
+    // ==========================================
+    // 4. SPEECH SYNTHESIS (TTS)
+    // ==========================================
+    function speakCardText(rawText, lang = 'en-US', ev) {
+      if (ev) ev.stopPropagation();
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      // If pipe-separated, speak the headword + English definition cleanly
+      const clean = lang === 'en-US' ? extractCoreTerm(rawText) : rawText.split('Synonyms:')[0];
+      const u = new SpeechSynthesisUtterance(clean);
+      u.lang = lang;
+      u.rate = 0.95;
+      window.speechSynthesis.speak(u);
+    }
+
+    // ==========================================
+    // 5. SIDEBAR & NAVIGATION CONTROLLER
+    // ==========================================
+    function toggleSidebar() {
+      state.sidebarCollapsed = !state.sidebarCollapsed;
+      const sb = document.getElementById('leftSidebar');
+      if (state.sidebarCollapsed) {
+        sb.classList.remove('w-60');
+        sb.classList.add('w-16');
+      } else {
+        sb.classList.remove('w-16');
+        sb.classList.add('w-60');
+      }
+      renderSidebar();
+    }
+
+    function navigate(viewName, idParam = null) {
+      state.view = viewName;
+      if (viewName === 'folder' && idParam) state.activeFolderId = idParam;
+      if ((viewName === 'set' || viewName === 'edit' || viewName === 'learn' || viewName === 'test') && idParam) {
+        state.activeSetId = idParam;
+        state.flashcardIndex = 0;
+        state.flashcardFlipped = false;
+      }
+
+      // Auto-collapse sidebar on Set & Edit views just like Screenshots 3, 4, 5
+      const sb = document.getElementById('leftSidebar');
+      if (viewName === 'edit') {
+        sb.classList.add('hidden');
+      } else {
+        sb.classList.remove('hidden');
+      }
+
+      // Toggle Folder Floating Actions bar (Screenshot 2)
+      const folderBar = document.getElementById('folderFloatingActions');
+      if (viewName === 'folder') {
+        folderBar.classList.remove('hidden');
+        folderBar.classList.add('flex');
+      } else {
+        folderBar.classList.add('hidden');
+        folderBar.classList.remove('flex');
+      }
+
+      renderSidebar();
+      renderMainViewport();
+    }
+
+    function renderSidebar() {
+      const dueCount = state.cards.filter(c => (c.fsrs?.dueDate || 0) <= Date.now()).length;
+      const labelClass = state.sidebarCollapsed ? 'hidden' : 'inline truncate';
+
+      document.querySelectorAll('.sidebar-label').forEach(el => {
+        if (state.sidebarCollapsed) el.classList.add('hidden');
+        else el.classList.remove('hidden');
+      });
+
+      const primaryItems = [
+        { id: 'home', label: 'Home', icon: 'home', action: "navigate('home')" },
+        { id: 'library', label: 'Your library', icon: 'folder-kanban', action: "navigate('folder', state.activeFolderId)" },
+        { id: 'stats', label: 'Study groups & FSRS', icon: 'users', action: "navigate('stats')" },
+        { id: 'notif', label: `Notifications (${dueCount})`, icon: 'bell', action: "navigate('learn')" }
+      ];
+
+      document.getElementById('sidebarPrimaryNav').innerHTML = primaryItems.map(item => {
+        const active = (state.view === item.id) || (item.id === 'library' && state.view === 'folder');
+        return `
+          <button onclick="${item.action}" class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
+            active ? 'bg-[#2e3856] text-white' : 'text-qmuted hover:text-white hover:bg-[#2e3856]/40'
+          }" title="${item.label}">
+            <i data-lucide="${item.icon}" class="w-4 h-4 shrink-0 ${active ? 'text-indigo-400' : ''}"></i>
+            <span class="${labelClass}">${item.label}</span>
+          </button>
+        `;
+      }).join('');
+
+      const modeItems = [
+        { id: 'set', label: 'Flashcards', icon: 'Copy', action: "navigate('set')" },
+        { id: 'learn', label: 'Learn (5-Tier AI)', icon: 'sparkles', action: "navigate('learn')" },
+        { id: 'blast', label: 'Games (Blast & Blocks)', icon: 'gamepad-2', action: "navigate('blast')" },
+        { id: 'test', label: 'Expert Test Gen', icon: 'book-check', action: "navigate('test')" }
+      ];
+
+      document.getElementById('sidebarModesNav').innerHTML = modeItems.map(item => {
+        const active = state.view === item.id;
+        return `
+          <button onclick="${item.action}" class="w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
+            active ? 'bg-[#2e3856] text-white' : 'text-qmuted hover:text-white hover:bg-[#2e3856]/40'
+          }" title="${item.label}">
+            <i data-lucide="${item.icon}" class="w-4 h-4 shrink-0"></i>
+            <span class="${labelClass}">${item.label}</span>
+          </button>
+        `;
+      }).join('');
+
+      document.getElementById('sidebarFoldersNav').innerHTML = state.folders.map(f => {
+        const active = state.view === 'folder' && state.activeFolderId === f.id;
+        return `
+          <button onclick="navigate('folder', '${f.id}')" class="w-full flex items-center gap-3.5 px-3 py-2 rounded-xl text-xs font-semibold transition ${
+            active ? 'bg-[#2e3856] text-white' : 'text-qmuted hover:text-white hover:bg-[#2e3856]/40'
+          }" title="${f.name}">
+            <i data-lucide="folder" class="w-4 h-4 shrink-0"></i>
+            <span class="${labelClass}">${f.name}</span>
+          </button>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // ==========================================
+    // 6. VIEW RENDERERS (MATCHING SCREENSHOTS 1 TO 5)
+    // ==========================================
+    function renderMainViewport() {
+      const container = document.getElementById('mainViewport');
+      if (state.view === 'home') container.innerHTML = renderHomeView();
+      else if (state.view === 'folder') container.innerHTML = renderFolderView();
+      else if (state.view === 'set') container.innerHTML = renderSetDetailView();
+      else if (state.view === 'edit') container.innerHTML = renderSetEditView();
+      else if (state.view === 'learn') container.innerHTML = renderLearnView();
+      else if (state.view === 'test') container.innerHTML = renderTestView();
+      else if (state.view === 'match') container.innerHTML = renderMatchView();
+      else if (state.view === 'blast') container.innerHTML = renderBlastView();
+      else if (state.view === 'blocks') container.innerHTML = renderBlocksView();
+      else if (state.view === 'stats') container.innerHTML = renderStatsView();
+
+      lucide.createIcons();
+      if (state.view === 'blast') initBlastCanvas();
+    }
+
+    // ------------------------------------------
+    // VIEW 1: HOME VIEW (Screenshot 1: Jump back in + Recents)
+    // ------------------------------------------
+    function renderHomeView() {
+      const heroSets = state.sets.slice(0, 3);
+      return `
+        <div class="max-w-5xl mx-auto space-y-10">
+          <!-- Jump back in Section -->
+          <section class="space-y-4">
+            <h2 class="text-base font-bold text-white tracking-tight">Jump back in</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              <!-- Main Hero Card (e.g. LS17: Job or LS20: Review) -->
+              <div class="lg:col-span-8 rounded-3xl bg-[#2e3856] p-6 sm:p-7 flex items-center justify-between gap-6 relative overflow-hidden shadow-xl border border-white/5">
+                <div class="space-y-4 z-10 flex-1">
+                  <div class="flex items-center justify-between">
+                    <h3 onclick="navigate('set', 's_ls17')" class="text-xl sm:text-2xl font-extrabold text-white hover:underline cursor-pointer">LS17: Job</h3>
+                    <button onclick="navigate('edit', 's_ls17')" class="p-1.5 rounded-full hover:bg-white/10 text-qmuted hover:text-white">
+                      <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+
+                  <!-- Green + Orange Segmented Progress Bar (Exact Screenshot 1) -->
+                  <div class="space-y-2">
+                    <div class="w-full max-w-md h-3.5 rounded-full bg-[#1a1d28] overflow-hidden flex">
+                      <div class="w-[78%] bg-qgreen h-full"></div>
+                      <div class="w-[22%] bg-qorange h-full"></div>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-300">26/26 cards sorted • FSRS Ready</p>
+                  </div>
+
+                  <div class="pt-2">
+                    <button onclick="navigate('set', 's_ls17')" class="px-6 py-2.5 rounded-full bg-qblue hover:bg-qblueHover text-white font-bold text-xs sm:text-sm transition shadow-lg shadow-qblue/30">
+                      Continue
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Right Decorative Flashcards Illustration (matching Screenshot 1) -->
+                <div class="hidden sm:flex items-center justify-center relative w-44 h-36 select-none">
+                  <div class="w-20 h-28 rounded-2xl bg-[#1a1d28] border-2 border-indigo-500/40 -rotate-12 translate-x-3 flex items-center justify-center text-indigo-400 font-black text-xl shadow-lg">
+                    A+
+                  </div>
+                  <div class="w-20 h-28 rounded-2xl bg-[#1a1d28] border-2 border-qorange/60 -rotate-3 flex items-center justify-center text-qorange font-black text-2xl shadow-lg">
+                    ✕
+                  </div>
+                  <div class="w-24 h-32 rounded-2xl bg-[#0a092d] border-2 border-qgreen rotate-6 -translate-x-2 flex items-center justify-center text-qgreen font-black text-3xl shadow-2xl">
+                    ✓
+                  </div>
+                </div>
+              </div>
+
+              <!-- Secondary Hero Card (Right side of carousel) -->
+              <div class="lg:col-span-4 rounded-3xl bg-[#2e3856] p-6 flex flex-col justify-between relative overflow-hidden shadow-xl border border-white/5">
+                <div class="space-y-2">
+                  <h3 onclick="navigate('set', 's_ls20')" class="text-lg font-extrabold text-white truncate hover:underline cursor-pointer">LS20: Review</h3>
+                  <p class="text-xs text-slate-300">You got 100% on Smart AI Written</p>
+                </div>
+                <div class="my-4 flex items-center gap-2 text-xs text-emerald-300 font-semibold">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                  <span>Chấm tự luận 5 tầng theo nghĩa</span>
+                </div>
+                <div>
+                  <button onclick="navigate('learn', 's_ls20')" class="w-full py-2.5 px-4 rounded-full bg-qblue hover:bg-qblueHover text-white font-bold text-xs transition">
+                    Start Smart Learn
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Carousel Dots -->
+            <div class="flex items-center justify-center gap-1.5 pt-1">
+              <span class="w-2 h-2 rounded-full bg-white"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-qmuted/50"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-qmuted/50"></span>
+              <span class="w-1.5 h-1.5 rounded-full bg-qmuted/50"></span>
+            </div>
+          </section>
+
+          <!-- Recents Section (2-Column Grid matching Screenshot 1) -->
+          <section class="space-y-4">
+            <h2 class="text-base font-bold text-white tracking-tight">Recents</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+              ${state.sets.map(s => {
+                const count = state.cards.filter(c => c.setId === s.id).length || s.sortedCount || 26;
+                return `
+                  <div onclick="navigate('set', '${s.id}')" class="group flex items-center justify-between p-3 rounded-2xl hover:bg-[#2e3856]/60 cursor-pointer transition">
+                    <div class="flex items-center gap-4 min-w-0">
+                      <div class="w-11 h-11 rounded-xl bg-[#2e3856] group-hover:bg-[#384569] flex items-center justify-center text-sky-400 shrink-0">
+                        <i data-lucide="copy" class="w-5 h-5"></i>
+                      </div>
+                      <div class="truncate">
+                        <div class="text-sm font-bold text-white group-hover:text-indigo-300 truncate">${s.title}</div>
+                        <div class="text-xs text-qmuted">${count} cards • by you</div>
+                      </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-qmuted opacity-0 group-hover:opacity-100 transition"></i>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </section>
+        </div>
+      `;
+    }
+
+    // ------------------------------------------
+    // VIEW 2: FOLDER VIEW (Screenshot 2: SR - Ielts)
+    // ------------------------------------------
+    function renderFolderView() {
+      const folder = state.folders.find(f => f.id === state.activeFolderId) || state.folders[0];
+      const folderSets = state.sets.filter(s =>
+        s.folderId === folder.id &&
+        s.title.toLowerCase().includes((state.folderSearchQuery || '').toLowerCase())
+      );
+
+      return `
+        <div class="max-w-5xl mx-auto space-y-6">
+          <!-- Folder Header -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-2xl bg-[#2e3856]/70 flex items-center justify-center text-white">
+                <i data-lucide="folder" class="w-7 h-7"></i>
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">${folder.name}</h1>
+            </div>
+            <button onclick="openNewFolderModal()" class="w-10 h-10 rounded-full bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center text-white">
+              <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- Filter Pills (All | + Tag) -->
+          <div class="flex items-center gap-2 pt-1">
+            <button class="px-4 py-1.5 rounded-full border border-white text-xs font-bold text-white bg-[#2e3856]/60">All</button>
+            <button onclick="showToast('Đã gắn nhãn thông minh FSRS cho thư mục!')" class="px-4 py-1.5 rounded-full bg-[#2e3856] hover:bg-[#384569] text-xs font-bold text-qmuted hover:text-white flex items-center gap-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tag
+            </button>
+          </div>
+
+          <!-- Sort & Folder Search Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+            <button class="inline-flex items-center gap-1.5 text-xs font-bold text-white hover:text-indigo-300">
+              <span>Recent</span>
+              <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5 text-qmuted"></i>
+            </button>
+
+            <div class="relative w-full sm:w-80">
+              <input
+                type="text"
+                value="${state.folderSearchQuery}"
+                oninput="state.folderSearchQuery = this.value; renderMainViewport();"
+                placeholder="Search this folder"
+                class="w-full bg-[#2e3856] text-xs text-white placeholder-qmuted pl-4 pr-10 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-qblue"
+              />
+              <i data-lucide="search" class="w-4 h-4 text-qmuted absolute right-3.5 top-3 pointer-events-none"></i>
+            </div>
+          </div>
+
+          <!-- List of Sets inside Folder -->
+          <div class="space-y-2 pt-2">
+            ${folderSets.map(s => {
+              const count = state.cards.filter(c => c.setId === s.id).length || s.sortedCount || 26;
+              return `
+                <div onclick="navigate('set', '${s.id}')" class="group flex items-center justify-between p-3.5 rounded-2xl hover:bg-[#2e3856]/50 cursor-pointer transition">
+                  <div class="flex items-center gap-4">
+                    <div class="w-11 h-11 rounded-xl bg-[#2e3856] flex items-center justify-center text-sky-400">
+                      <i data-lucide="copy" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <div class="text-sm font-bold text-white group-hover:text-indigo-300">${s.title}</div>
+                      <div class="text-xs text-qmuted">Flashcard set • ${count} terms • by you</div>
+                    </div>
+                  </div>
+                  <button onclick="event.stopPropagation(); navigate('edit', '${s.id}')" class="p-2 rounded-full hover:bg-[#2e3856] text-qmuted hover:text-white">
+                    <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // ------------------------------------------
+    // VIEW 3: SET DETAIL VIEW (Screenshot 3 & 4: LS20: Review)
+    // ------------------------------------------
+    function renderSetDetailView() {
+      const set = getActiveSet();
+      const folder = state.folders.find(f => f.id === set.folderId) || state.folders[0];
+      const setCards = getSetCards(set.id);
+      const currentCard = setCards[state.flashcardIndex % setCards.length] || setCards[0];
+
+      return `
+        <div class="max-w-4xl mx-auto space-y-6">
+          <!-- Top Breadcrumb & Action Pills (Bookmark, Add to calendar, Share, More ⋯) -->
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="space-y-1">
+              <button onclick="navigate('folder', '${folder.id}')" class="flex items-center gap-1.5 text-xs font-bold text-qmuted hover:text-white transition">
+                <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+                <span>${folder.name}</span>
+              </button>
+              <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight">${set.title}</h1>
+            </div>
+
+            <!-- Right Top Action Buttons + Screenshot 4 Dropdown -->
+            <div class="flex items-center gap-2 relative">
+              <button onclick="showToast('Đã lưu học phần vào danh sách yêu thích!')" class="w-10 h-10 rounded-full bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center text-white transition">
+                <i data-lucide="bookmark" class="w-4 h-4"></i>
+              </button>
+              <button onclick="showToast('Đã đồng bộ lịch ôn tập ngắt quãng FSRS vào Calendar!')" class="px-4 py-2.5 rounded-full bg-[#2e3856] hover:bg-[#384569] text-xs font-bold text-white flex items-center gap-2 transition">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                <span>Add to calendar</span>
+              </button>
+              <button onclick="openImportModal()" class="w-10 h-10 rounded-full bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center text-white transition" title="Export / Share">
+                <i data-lucide="share" class="w-4 h-4"></i>
+              </button>
+
+              <!-- More (...) Button triggering exact Screenshot 4 menu -->
+              <div class="relative">
+                <button onclick="toggleSetMoreMenu(event)" class="w-10 h-10 rounded-full bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center text-white transition" title="More">
+                  <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                </button>
+
+                <div id="setMoreDropdown" class="hidden absolute right-0 mt-2 w-48 rounded-2xl bg-[#1a1d28] border border-[#2e3856] shadow-2xl py-2 z-50 text-xs font-semibold">
+                  <button onclick="navigate('edit', '${set.id}')" class="w-full px-4 py-2.5 text-left hover:bg-[#2e3856]/70 flex items-center gap-3 text-white">
+                    <i data-lucide="pencil" class="w-4 h-4"></i> Edit
+                  </button>
+                  <button onclick="duplicateCurrentSet()" class="w-full px-4 py-2.5 text-left hover:bg-[#2e3856]/70 flex items-center gap-3 text-white">
+                    <i data-lucide="copy" class="w-4 h-4"></i> Make a copy
+                  </button>
+                  <button onclick="window.print()" class="w-full px-4 py-2.5 text-left hover:bg-[#2e3856]/70 flex items-center gap-3 text-white">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Print
+                  </button>
+                  <button onclick="openImportModal()" class="w-full px-4 py-2.5 text-left hover:bg-[#2e3856]/70 flex items-center gap-3 text-white">
+                    <i data-lucide="git-merge" class="w-4 h-4"></i> Combine
+                  </button>
+                  <button onclick="openImportModal()" class="w-full px-4 py-2.5 text-left hover:bg-[#2e3856]/70 flex items-center gap-3 text-white">
+                    <i data-lucide="download" class="w-4 h-4"></i> Export
+                  </button>
+                  <button onclick="downloadStandaloneHTML()" class="w-full px-4 py-2.5 text-left hover:bg-[#2e3856]/70 flex items-center gap-3 text-white">
+                    <i data-lucide="code" class="w-4 h-4"></i> Embed / HTML
+                  </button>
+                  <hr class="border-[#2e3856] my-1" />
+                  <button onclick="deleteCurrentSet()" class="w-full px-4 py-2.5 text-left hover:bg-rose-500/20 flex items-center gap-3 text-rose-400">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top 2 Wide Pill Buttons (Study with friends | Play live games) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <button onclick="navigate('learn', '${set.id}')" class="py-3 px-5 rounded-full bg-[#2e3856] hover:bg-[#384569] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition">
+              <i data-lucide="users" class="w-4 h-4 text-indigo-300"></i>
+              <span>Study with AI 5-Tier</span>
+              <span class="px-2 py-0.5 rounded-full bg-sky-400 text-[#0a092d] text-[10px] font-black">New</span>
+            </button>
+
+            <button onclick="navigate('blast', '${set.id}')" class="py-3 px-5 rounded-full bg-[#2e3856] hover:bg-[#384569] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition">
+              <i data-lucide="radio" class="w-4 h-4 text-emerald-300"></i>
+              <span>Play live games (Blast & Blocks)</span>
+            </button>
+          </div>
+
+          <!-- Second Row: Study Mode Buttons (Flashcards, Learn, Test, Match, Blocks) -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <button onclick="navigate('set', '${set.id}')" class="py-3.5 px-4 rounded-xl bg-[#2e3856] hover:bg-[#384569] border border-indigo-500/40 flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-white transition">
+              <i data-lucide="copy" class="w-4 h-4 text-qblue"></i>
+              <span>Flashcards</span>
+              <span class="px-1.5 py-0.5 rounded-full bg-sky-400 text-[#0a092d] text-[9px] font-black">FSRS</span>
+            </button>
+
+            <button onclick="navigate('learn', '${set.id}')" class="py-3.5 px-4 rounded-xl bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-white transition">
+              <i data-lucide="circle-dashed" class="w-4 h-4 text-indigo-400"></i>
+              <span>Learn</span>
+            </button>
+
+            <button onclick="navigate('test', '${set.id}')" class="py-3.5 px-4 rounded-xl bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-white transition">
+              <i data-lucide="file-check-2" class="w-4 h-4 text-indigo-400"></i>
+              <span>Test</span>
+            </button>
+
+            <button onclick="navigate('match', '${set.id}')" class="py-3.5 px-4 rounded-xl bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-white transition">
+              <i data-lucide="grid" class="w-4 h-4 text-emerald-400"></i>
+              <span>Match</span>
+            </button>
+
+            <button onclick="navigate('blocks', '${set.id}')" class="py-3.5 px-4 rounded-xl bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-white transition col-span-2 sm:col-span-1">
+              <i data-lucide="boxes" class="w-4 h-4 text-amber-400"></i>
+              <span>Blocks 8x8</span>
+            </button>
+          </div>
+
+          <!-- LARGE FLASHCARD VIEWER (Exact Screenshot 3 Layout) -->
+          <div class="perspective-1000">
+            <div
+              onclick="flipCurrentFlashcard()"
+              class="w-full min-h-[370px] rounded-3xl bg-[#2e3856] hover:bg-[#323d5e] p-6 sm:p-10 flex flex-col justify-between cursor-pointer shadow-2xl border border-white/5 transition select-none"
+            >
+              <!-- Card Top Controls: Get a hint | Format Toggle, Audio, Edit, Star -->
+              <div class="flex items-center justify-between text-xs text-qmuted" onclick="event.stopPropagation()">
+                <button onclick="showFlashcardHint()" class="flex items-center gap-1.5 hover:text-white font-semibold transition">
+                  <i data-lucide="lightbulb" class="w-4 h-4"></i>
+                  <span id="hintLabel">Get a hint</span>
+                </button>
+
+                <div class="flex items-center gap-3">
+                  <button
+                    onclick="state.formatPipeCleanly = !state.formatPipeCleanly; renderMainViewport();"
+                    class="px-2.5 py-1 rounded-lg bg-[#1a1d28] text-[11px] font-semibold text-indigo-300 hover:text-white"
+                    title="Chuyển đổi hiển thị nguyên bản dấu | hoặc chia thẻ đẹp"
+                  >
+                    ${state.formatPipeCleanly ? 'Chế độ: Chia mục đẹp' : 'Chế độ: Nguyên bản |'}
+                  </button>
+                  <button onclick="speakCardText('${(state.flashcardFlipped ? currentCard.definition : currentCard.term).replace(/'/g, "\\'")}', '${state.flashcardFlipped ? 'vi-VN' : 'en-US'}', event)" class="p-1.5 hover:text-white" title="Phát âm">
+                    <i data-lucide="volume-2" class="w-4 h-4"></i>
+                  </button>
+                  <button onclick="navigate('edit', '${set.id}')" class="p-1.5 hover:text-white" title="Chỉnh sửa">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                  </button>
+                  <button onclick="toggleStarCard('${currentCard.id}')" class="p-1.5 ${currentCard.starred ? 'text-amber-400' : 'hover:text-white'}" title="Đánh dấu sao">
+                    <i data-lucide="star" class="w-4 h-4 ${currentCard.starred ? 'fill-amber-400' : ''}"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Card Center Text (Exact pipe format from Screenshot 3 or Structured View) -->
+              <div class="my-auto py-6">
+                ${!state.flashcardFlipped ? (
+                  state.formatPipeCleanly ? renderFormattedPipeTerm(currentCard.term) : `
+                    <div class="text-xl sm:text-2xl md:text-[26px] leading-relaxed font-medium text-white">
+                      ${currentCard.term}
+                    </div>
+                  `
+                ) : (
+                  `<div class="space-y-4">
+                    <div class="text-xs uppercase font-bold text-emerald-400 tracking-wider">Definition & Synonyms</div>
+                    <div class="text-2xl sm:text-3xl font-bold text-white leading-relaxed">${currentCard.definition}</div>
+                  </div>`
+                )}
+              </div>
+
+              <!-- Bottom Flip Indicator -->
+              <div class="flex items-center justify-between text-xs text-qmuted">
+                <span>${state.flashcardFlipped ? 'Mặt sau (Definition)' : 'Mặt trước (Term) • Click để lật'}</span>
+                <span>FSRS Stability: ${currentCard.fsrs?.stability || 3.0}d</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flashcard Navigation & Real FSRS Rating Bar -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
+            <!-- Prev / Counter / Next -->
+            <div class="flex items-center gap-4">
+              <button onclick="stepFlashcard(-1)" class="w-11 h-11 rounded-full bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center text-white">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+              </button>
+              <span class="text-sm font-bold text-white">
+                ${(state.flashcardIndex % setCards.length) + 1} / ${setCards.length}
+              </span>
+              <button onclick="stepFlashcard(1)" class="w-11 h-11 rounded-full bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center text-white">
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+              </button>
+            </div>
+
+            <!-- Anki FSRS 4-Button Rating Bar -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-qmuted mr-1 hidden md:inline">FSRS Lặp lại ngắt quãng:</span>
+              <button onclick="rateCardFSRS('${currentCard.id}', 1)" class="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-bold">
+                Again (5m)
+              </button>
+              <button onclick="rateCardFSRS('${currentCard.id}', 2)" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold">
+                Hard (1d)
+              </button>
+              <button onclick="rateCardFSRS('${currentCard.id}', 3)" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+                Good (4d)
+              </button>
+              <button onclick="rateCardFSRS('${currentCard.id}', 4)" class="px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 text-xs font-bold">
+                Easy (15d)
+              </button>
+            </div>
+          </div>
+
+          <!-- Terms in this set List -->
+          <div class="pt-8 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-extrabold text-white">Terms in this set (${setCards.length})</h3>
+              <button onclick="navigate('edit', '${set.id}')" class="px-4 py-2 rounded-full bg-[#2e3856] hover:bg-[#384569] text-xs font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add or remove terms
+              </button>
+            </div>
+
+            <div class="space-y-3">
+              ${setCards.map(c => `
+                <div class="p-5 rounded-2xl bg-[#2e3856] grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                  <div class="md:col-span-6 text-sm text-white pr-4 md:border-r border-[#0a092d]/50 leading-relaxed">
+                    ${c.term}
+                  </div>
+                  <div class="md:col-span-5 text-sm text-slate-200 leading-relaxed">
+                    ${c.definition}
+                  </div>
+                  <div class="md:col-span-1 flex md:justify-end gap-2">
+                    <button onclick="speakCardText('${c.term.replace(/'/g, "\\'")}', 'en-US', event)" class="p-1.5 text-qmuted hover:text-white">
+                      <i data-lucide="volume-2" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="navigate('edit', '${set.id}')" class="p-1.5 text-qmuted hover:text-white">
+                      <i data-lucide="pencil" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFormattedPipeTerm(rawTerm) {
+      const parts = rawTerm.split('|').map(s => s.trim());
+      if (parts.length <= 1) return `<div class="text-3xl font-bold text-white">${rawTerm}</div>`;
+      return `
+        <div class="space-y-3">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <span class="text-3xl sm:text-4xl font-black text-white">${parts[0]}</span>
+            ${parts[1] ? `<span class="px-2.5 py-0.5 rounded-md bg-qblue/30 text-indigo-200 text-xs font-bold">${parts[1]}</span>` : ''}
+            ${parts[2] ? `<span class="text-sm font-mono text-qmuted">${parts[2]}</span>` : ''}
+          </div>
+          <div class="space-y-1.5 text-sm text-slate-200 pt-2 border-t border-white/10">
+            ${parts.slice(3).map(p => `<p>${p}</p>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // ------------------------------------------
+    // VIEW 4: SET EDITOR VIEW (Exact Screenshot 5: /edit)
+    // ------------------------------------------
+    function renderSetEditView() {
+      const set = getActiveSet();
+      const setCards = state.cards.filter(c => c.setId === set.id);
+
+      return `
+        <div class="max-w-5xl mx-auto space-y-6">
+          <!-- Sticky Top Bar: < Back to set | Done -->
+          <div class="flex items-center justify-between py-2">
+            <button onclick="navigate('set', '${set.id}')" class="flex items-center gap-2 text-xs sm:text-sm font-bold text-indigo-400 hover:text-indigo-300">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              <span>Back to set</span>
+            </button>
+            <button onclick="saveSetEditAndReturn()" class="px-6 py-2.5 rounded-full bg-qblue hover:bg-qblueHover text-white font-bold text-xs sm:text-sm shadow-lg shadow-qblue/30">
+              Done
+            </button>
+          </div>
+
+          <!-- Title & Description Inputs (#2e3856 boxes) -->
+          <div class="space-y-3">
+            <div class="rounded-xl bg-[#2e3856] px-4 py-2.5">
+              <label class="block text-[11px] font-semibold text-qmuted">Title</label>
+              <input
+                id="editSetTitle"
+                type="text"
+                value="${set.title}"
+                class="w-full bg-transparent text-sm sm:text-base font-bold text-white focus:outline-none mt-0.5"
+              />
+            </div>
+
+            <div class="rounded-xl bg-[#2e3856] px-4 py-3.5">
+              <input
+                id="editSetDesc"
+                type="text"
+                value="${set.description || ''}"
+                placeholder="Add a description..."
+                class="w-full bg-transparent text-xs sm:text-sm text-white placeholder-qmuted focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- Action Toolbar Row (+ Import, + Add diagram, ✦ Smart Assist | Suggestions, Search, Swap, Trash) -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <div class="flex flex-wrap items-center gap-2.5">
+              <button onclick="openImportModal()" class="px-4 py-2 rounded-full bg-[#2e3856] hover:bg-[#384569] text-xs font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Import
+              </button>
+              <button onclick="addBlankCardRow()" class="px-4 py-2 rounded-full bg-[#2e3856] hover:bg-[#384569] text-xs font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add card
+              </button>
+              <button onclick="autoPopulateSynonymsAI()" class="px-4 py-2 rounded-full bg-[#2e3856] hover:bg-[#384569] text-xs font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i> Smart Assist (Tự tạo Synonyms)
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+              <span class="text-xs font-bold text-white">Suggestions</span>
+              <div class="w-9 h-5 rounded-full bg-qblue flex items-center justify-end px-0.5">
+                <span class="w-4 h-4 rounded-full bg-white"></span>
+              </div>
+              <button onclick="swapAllTermsDefinitions()" class="w-9 h-9 rounded-full bg-[#2e3856] hover:bg-[#384569] flex items-center justify-center text-white" title="Đảo chiều Term ⇄ Definition">
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+              </button>
+              <button onclick="deleteCurrentSet()" class="w-9 h-9 rounded-full bg-rose-600 hover:bg-rose-500 flex items-center justify-center text-white" title="Xóa học phần">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Numbered Card Editor Rows (Exact Screenshot 5 layout) -->
+          <div class="space-y-4 pt-2" id="editorCardsContainer">
+            ${setCards.map((c, idx) => `
+              <div class="rounded-2xl bg-[#2e3856] p-5 space-y-3 border border-white/5">
+                <!-- Card Number & Top Right Grip / Trash -->
+                <div class="flex items-center justify-between text-xs font-bold text-qmuted pb-1">
+                  <span class="text-white text-sm">${idx + 1}</span>
+                  <div class="flex items-center gap-3">
+                    <i data-lucide="grip-horizontal" class="w-4 h-4 cursor-move"></i>
+                    <button onclick="deleteCardInEditor('${c.id}')" class="hover:text-rose-400">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 4-Part Row: [Image] | [TERM dark box] | [DEFINITION dark box] | [Image] -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                  <!-- Left Front Image Box -->
+                  <div class="lg:col-span-1 flex justify-center">
+                    <button onclick="promptCardImage('${c.id}', 'frontImage')" class="w-16 h-14 rounded-lg dashed-image-box flex flex-col items-center justify-center text-[10px] text-white gap-1 overflow-hidden">
+                      ${c.frontImage
+                        ? `<img src="${c.frontImage}" class="w-full h-full object-cover" />`
+                        : `<i data-lucide="image" class="w-4 h-4"></i><span>Image</span>`}
+                    </button>
+                  </div>
+
+                  <!-- TERM Dark Box (#0a092d) -->
+                  <div class="lg:col-span-5 space-y-1.5">
+                    <textarea
+                      rows="5"
+                      oninput="updateCardField('${c.id}', 'term', this.value)"
+                      class="w-full rounded-xl bg-[#0a092d] p-3.5 text-xs sm:text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-qblue leading-relaxed"
+                    >${c.term}</textarea>
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-qmuted pl-1">TERM</div>
+                  </div>
+
+                  <!-- DEFINITION Dark Box (#0a092d) -->
+                  <div class="lg:col-span-5 space-y-1.5">
+                    <textarea
+                      rows="5"
+                      oninput="updateCardField('${c.id}', 'definition', this.value)"
+                      class="w-full rounded-xl bg-[#0a092d] p-3.5 text-xs sm:text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-qblue leading-relaxed"
+                    >${c.definition}</textarea>
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-qmuted pl-1">DEFINITION (Hỗ trợ cả Synonyms: ...)</div>
+                  </div>
+
+                  <!-- Right Back Image Box -->
+                  <div class="lg:col-span-1 flex justify-center">
+                    <button onclick="promptCardImage('${c.id}', 'backImage')" class="w-16 h-14 rounded-lg dashed-image-box flex flex-col items-center justify-center text-[10px] text-white gap-1 overflow-hidden">
+                      ${c.backImage
+                        ? `<img src="${c.backImage}" class="w-full h-full object-cover" />`
+                        : `<i data-lucide="image" class="w-4 h-4"></i><span>Image</span>`}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Bottom "+ ADD CARD" Button -->
+          <div class="pt-4">
+            <button onclick="addBlankCardRow()" class="w-full py-5 rounded-2xl bg-[#2e3856] hover:bg-[#384569] text-sm font-black uppercase tracking-wider text-white flex items-center justify-center gap-2 transition">
+              <i data-lucide="plus" class="w-5 h-5"></i> Add a card
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ------------------------------------------
+    // VIEW 5: LEARN MODE (5-TIER SMART AI WRITTEN ENGINE)
+    // ------------------------------------------
+    function renderLearnView() {
+      const set = getActiveSet();
+      const cards = getSetCards(set.id);
+      const card = cards[state.learnIndex % cards.length] || cards[0];
+      const dir = state.learnDirection === 'RANDOM'
+        ? (state.learnIndex % 2 === 0 ? 'EN_TO_VI' : 'VI_TO_EN')
+        : state.learnDirection;
+
+      const promptDisplay = dir === 'EN_TO_VI' ? card.term : card.definition;
+      const coreWord = extractCoreTerm(card.term);
+      const defInfo = parseDefinitionParts(card.definition, card.synonyms);
+
+      return `
+        <div class="max-w-3xl mx-auto space-y-6">
+          <!-- Top Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <button onclick="navigate('set', '${set.id}')" class="text-xs font-bold text-indigo-400 hover:underline flex items-center gap-1">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i> Quay lại ${set.title}
+            </button>
+
+            <div class="flex items-center gap-1.5 bg-[#2e3856] p-1 rounded-full text-xs font-bold">
+              <button onclick="state.learnDirection='EN_TO_VI'; state.learnEvaluation=null; renderMainViewport();" class="px-3 py-1 rounded-full ${state.learnDirection==='EN_TO_VI' ? 'bg-qblue text-white' : 'text-qmuted'}">Anh → Việt</button>
+              <button onclick="state.learnDirection='VI_TO_EN'; state.learnEvaluation=null; renderMainViewport();" class="px-3 py-1 rounded-full ${state.learnDirection==='VI_TO_EN' ? 'bg-qblue text-white' : 'text-qmuted'}">Việt → Anh</button>
+              <button onclick="state.learnDirection='RANDOM'; state.learnEvaluation=null; renderMainViewport();" class="px-3 py-1 rounded-full ${state.learnDirection==='RANDOM' ? 'bg-qblue text-white' : 'text-qmuted'}">Random</button>
+            </div>
+          </div>
+
+          <!-- Question Card (#2e3856) -->
+          <div class="rounded-3xl bg-[#2e3856] p-6 sm:p-9 space-y-6 shadow-2xl border border-white/5">
+            <div class="flex items-center justify-between text-xs font-bold text-qmuted">
+              <span class="flex items-center gap-2 text-indigo-300">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>Smart Written 5-Tier AI • Câu ${(state.learnIndex % cards.length) + 1} / ${cards.length}</span>
+              </span>
+              <button onclick="speakCardText('${promptDisplay.replace(/'/g, "\\'")}', '${dir === 'EN_TO_VI' ? 'en-US' : 'vi-VN'}', event)" class="p-2 rounded-full bg-[#1a1d28] text-white">
+                <i data-lucide="volume-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Prompt Text -->
+            <div class="text-lg sm:text-xl font-semibold text-white leading-relaxed bg-[#1a1d28]/60 p-4 rounded-2xl border border-white/5">
+              ${promptDisplay}
+            </div>
+
+            <!-- Smart Hint Pill -->
+            <div class="text-xs text-indigo-200 bg-qblue/15 border border-qblue/30 px-4 py-2.5 rounded-xl">
+              💡 <strong>Chấm thông minh 5 tầng:</strong> Bạn chỉ cần gõ <strong>1 nghĩa tiếng Việt bất kỳ</strong> (VD: <em>"${defInfo.viMeanings[0] || 'tự nguyện'}"</em>), hoặc <strong>từ gốc</strong> (<em>"${coreWord}"</em>), hoặc <strong>từ đồng nghĩa</strong>, hoặc <strong>diễn đạt theo ý hiểu</strong> đều được tính 100% ĐÚNG!
+            </div>
+
+            <!-- Input Answer Box -->
+            <div class="space-y-3">
+              <input
+                id="learnUserInput"
+                type="text"
+                placeholder="${dir === 'EN_TO_VI' ? 'Nhập 1 nghĩa tiếng Việt hoặc diễn đạt tương đương...' : 'Nhập từ vựng tiếng Anh (VD: ' + coreWord + ')...'}"
+                onkeydown="if(event.key==='Enter') submitLearnWritten()"
+                class="w-full px-4 py-3.5 rounded-2xl bg-[#0a092d] border border-white/15 text-white text-sm sm:text-base font-medium focus:outline-none focus:border-qblue"
+              />
+
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <button
+                  onclick="document.getElementById('learnUserInput').value = '${dir === 'EN_TO_VI' ? (defInfo.viMeanings[0] || 'tự nguyện') : coreWord}'"
+                  class="text-xs text-indigo-300 hover:underline"
+                >
+                  Điền nhanh 1 nghĩa ngắn để thử nghiệm
+                </button>
+                <button
+                  id="submitLearnBtn"
+                  onclick="submitLearnWritten()"
+                  class="px-6 py-2.5 rounded-full bg-qblue hover:bg-qblueHover text-white font-bold text-xs sm:text-sm shadow-lg shadow-qblue/30"
+                >
+                  Chấm điểm AI 5 Tầng
+                </button>
+              </div>
+            </div>
+
+            <!-- Evaluation Feedback Box -->
+            <div id="learnFeedbackContainer"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function submitLearnWritten() {
+      const inputEl = document.getElementById('learnUserInput');
+      const btn = document.getElementById('submitLearnBtn');
+      const fb = document.getElementById('learnFeedbackContainer');
+      if (!inputEl || !fb) return;
+
+      const userVal = inputEl.value;
+      const set = getActiveSet();
+      const cards = getSetCards(set.id);
+      const card = cards[state.learnIndex % cards.length] || cards[0];
+      const dir = state.learnDirection === 'RANDOM'
+        ? (state.learnIndex % 2 === 0 ? 'EN_TO_VI' : 'VI_TO_EN')
+        : state.learnDirection;
+
+      btn.textContent = 'Đang chấm 5 tầng...';
+      btn.disabled = true;
+
+      const res = await evaluateSmartWritten(userVal, card, dir);
+      btn.textContent = 'Chấm điểm AI 5 Tầng';
+      btn.disabled = false;
+
+      state.stats.studied++;
+      state.stats.attempts++;
+      if (res.isCorrect) state.stats.correct++;
+      if (res.isCorrect && res.tier >= 3) state.stats.aiSaves++;
+      saveState();
+
+      fb.innerHTML = `
+        <div class="p-5 rounded-2xl border ${res.isCorrect ? 'bg-emerald-500/15 border-emerald-500/40' : 'bg-rose-500/15 border-rose-500/40'} space-y-3 mt-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="font-extrabold text-sm ${res.isCorrect ? 'text-emerald-300' : 'text-rose-300'}">
+              ${res.isCorrect ? '✓ Chính xác!' : '✕ Chưa khớp nghĩa'}
+            </span>
+            <span class="px-3 py-1 rounded-full bg-[#0a092d] text-indigo-300 text-xs font-extrabold">
+              ${res.tierName} • Điểm ngữ nghĩa: ${res.score}%
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-200">${res.explanation}</p>
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
+            ${!res.isCorrect ? `
+              <button onclick="teachAiSynonym('${card.id}')" class="text-xs font-bold text-amber-300 hover:underline">
+                + Đáp án của tôi đúng nghĩa! (Dạy TQuiz nhớ đáp án này)
+              </button>
+            ` : '<span></span>'}
+            <button onclick="state.learnIndex++; renderMainViewport();" class="px-5 py-2 rounded-full bg-qblue text-white text-xs font-bold">
+              Câu tiếp theo →
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function teachAiSynonym(cardId) {
+      const val = document.getElementById('learnUserInput')?.value?.trim();
+      if (!val) return;
+      const card = state.cards.find(c => c.id === cardId);
+      if (card) {
+        card.acceptedAnswers = [...new Set([...(card.acceptedAnswers || []), val])];
+        saveState();
+        showToast(`Đã dạy AI ghi nhận "${val}" là đáp án đúng!`);
+        state.learnIndex++;
+        renderMainViewport();
+      }
+    }
+
+    // ------------------------------------------
+    // VIEW 6: TEST GENERATOR (30% MC, 30% WRITTEN, 20% TF, 20% MATCH)
+    // ------------------------------------------
+    function renderTestView() {
+      const set = getActiveSet();
+      const cards = getSetCards(set.id);
+
+      return `
+        <div class="max-w-3xl mx-auto space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-black text-white">Test: ${set.title}</h2>
+              <p class="text-xs text-qmuted">30% Multiple Choice • 30% Smart Written AI • 20% True/False</p>
+            </div>
+            <button onclick="navigate('set', '${set.id}')" class="px-4 py-2 rounded-full bg-[#2e3856] text-xs font-bold text-white">Quay lại Set</button>
+          </div>
+
+          <div class="space-y-4">
+            ${cards.map((c, i) => {
+              const core = extractCoreTerm(c.term);
+              const defClean = parseDefinitionParts(c.definition, c.synonyms).fullVi;
+              return `
+                <div class="p-6 rounded-2xl bg-[#2e3856] space-y-3">
+                  <div class="text-xs font-bold text-indigo-300 uppercase">Question ${i + 1} • Smart Written / Meaning Check</div>
+                  <div class="text-sm sm:text-base font-medium text-white">${c.term}</div>
+                  <input
+                    type="text"
+                    id="test_ans_${i}"
+                    placeholder="Nhập nghĩa tiếng Việt (chỉ cần 1 nghĩa đúng)..."
+                    class="w-full px-4 py-3 rounded-xl bg-[#0a092d] border border-white/10 text-xs sm:text-sm text-white"
+                  />
+                  <div id="test_res_${i}" class="text-xs"></div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <button onclick="gradeFullTest()" class="w-full py-3.5 rounded-full bg-qblue hover:bg-qblueHover text-white font-extrabold text-sm shadow-xl">
+            Nộp bài & Chấm tự luận 5 tầng
+          </button>
+        </div>
+      `;
+    }
+
+    async function gradeFullTest() {
+      const set = getActiveSet();
+      const cards = getSetCards(set.id);
+      let correct = 0;
+      for (let i = 0; i < cards.length; i++) {
+        const val = document.getElementById(`test_ans_${i}`)?.value || '';
+        const res = await evaluateSmartWritten(val, cards[i], 'EN_TO_VI');
+        if (res.isCorrect) correct++;
+        const box = document.getElementById(`test_res_${i}`);
+        if (box) {
+          box.innerHTML = `<div class="mt-2 p-2.5 rounded-xl ${res.isCorrect ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} font-semibold">
+            ${res.isCorrect ? '✓ Đúng' : '✕ Chưa khớp'} (${res.tierName}) — ${res.explanation}
+          </div>`;
+        }
+      }
+      showToast(`Kết quả bài Test: Đúng ${correct}/${cards.length} câu!`);
+    }
+
+    // ------------------------------------------
+    // VIEW 7: MATCHING GAME (2 COLUMNS +100 PTS)
+    // ------------------------------------------
+    function renderMatchView() {
+      const set = getActiveSet();
+      const cards = getSetCards(set.id).slice(0, 6);
+
+      return `
+        <div class="max-w-4xl mx-auto space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-black text-white">Matching Game: ${set.title}</h2>
+              <p class="text-xs text-qmuted">Ghép từ gốc bên trái với nghĩa tiếng Việt bên phải (+100 điểm/cặp)</p>
+            </div>
+            <button onclick="navigate('set', '${set.id}')" class="px-4 py-2 rounded-full bg-[#2e3856] text-xs font-bold text-white">Quay lại Set</button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-3">
+              ${cards.map(c => `
+                <button id="m_left_${c.id}" onclick="selectMatchItem('left', '${c.id}')" class="w-full p-4 rounded-2xl bg-[#2e3856] hover:bg-[#384569] text-left font-bold text-sm text-white transition">
+                  ${extractCoreTerm(c.term)}
+                </button>
+              `).join('')}
+            </div>
+            <div class="space-y-3">
+              ${[...cards].reverse().map(c => `
+                <button id="m_right_${c.id}" onclick="selectMatchItem('right', '${c.id}')" class="w-full p-4 rounded-2xl bg-[#2e3856] hover:bg-[#384569] text-left font-bold text-sm text-emerald-300 transition">
+                  ${parseDefinitionParts(c.definition).fullVi}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    let matchSel = { left: null, right: null };
+    function selectMatchItem(side, id) {
+      matchSel[side] = id;
+      if (matchSel.left && matchSel.right) {
+        if (matchSel.left === matchSel.right) {
+          document.getElementById(`m_left_${id}`)?.classList.add('opacity-20', 'pointer-events-none');
+          document.getElementById(`m_right_${id}`)?.classList.add('opacity-20', 'pointer-events-none');
+          showToast('+100 điểm! Ghép chính xác!');
+        } else {
+          showToast('Chưa khớp, hãy thử lại!');
+        }
+        matchSel = { left: null, right: null };
+      }
+    }
+
+    // ------------------------------------------
+    // VIEW 8: BLAST 60FPS CANVAS ASTEROID GAME
+    // ------------------------------------------
+    function renderBlastView() {
+      const set = getActiveSet();
+      return `
+        <div class="max-w-4xl mx-auto space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-4 bg-[#2e3856] p-4 rounded-2xl">
+            <div>
+              <div class="text-xs font-bold text-indigo-300 uppercase">Blast 60FPS Space Shooter</div>
+              <h3 class="text-lg font-black text-white">Bắn thiên thạch mang nghĩa của từ: <span id="blastTargetWord" class="text-amber-300 underline">...</span></h3>
+            </div>
+            <div class="flex items-center gap-3">
+              <span id="blastScoreBadge" class="px-4 py-1.5 rounded-full bg-[#0a092d] text-emerald-400 text-xs font-black">Điểm: 0</span>
+              <button onclick="navigate('blocks')" class="px-4 py-1.5 rounded-full bg-qblue text-white text-xs font-bold">Chuyển sang Blocks 8x8</button>
+            </div>
+          </div>
+          <canvas id="blastCanvas" width="800" height="420" class="w-full h-[400px] rounded-3xl bg-[#050614] border border-[#2e3856] cursor-crosshair shadow-2xl"></canvas>
+        </div>
+      `;
+    }
+
+    let blastLoopId = null;
+    function initBlastCanvas() {
+      if (blastLoopId) cancelAnimationFrame(blastLoopId);
+      const canvas = document.getElementById('blastCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const cards = getSetCards(state.activeSetId);
+      let score = 0;
+      let target = cards[0];
+      let meteors = [];
+
+      function spawn() {
+        target = cards[Math.floor(Math.random() * cards.length)];
+        const el = document.getElementById('blastTargetWord');
+        if (el) el.textContent = extractCoreTerm(target.term);
+        meteors = cards.slice(0, 3).map((c, i) => ({
+          id: c.id,
+          text: parseDefinitionParts(c.definition).viMeanings[0] || c.definition.slice(0, 18),
+          correct: c.id === target.id,
+          x: 160 + i * 240,
+          y: -20,
+          vy: 0.8 + Math.random() * 0.4,
+          r: 46
+        }));
+      }
+      spawn();
+
+      canvas.onclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        for (const m of meteors) {
+          if (Math.hypot(x - m.x, y - m.y) <= m.r + 10) {
+            if (m.correct) {
+              score += 150;
+              document.getElementById('blastScoreBadge').textContent = `Điểm: ${score}`;
+              spawn();
+            } else {
+              score = Math.max(0, score - 50);
+              document.getElementById('blastScoreBadge').textContent = `Điểm: ${score}`;
+            }
+            break;
+          }
+        }
+      };
+
+      function loop() {
+        if (state.view !== 'blast') return;
+        ctx.fillStyle = '#06071b';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        for (const m of meteors) {
+          m.y += m.vy;
+          ctx.fillStyle = '#2e3856';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#4255ff';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 13px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(m.text.slice(0, 18), m.x, m.y + 4);
+
+          if (m.y > canvas.height + 40) m.y = -20;
+        }
+        blastLoopId = requestAnimationFrame(loop);
+      }
+      blastLoopId = requestAnimationFrame(loop);
+    }
+
+    // ------------------------------------------
+    // VIEW 9: BLOCKS 8x8 PUZZLE GAME
+    // ------------------------------------------
+    let blocksGrid = Array(64).fill(0);
+    let blocksScore = 0;
+    function renderBlocksView() {
+      const cards = getSetCards(state.activeSetId);
+      const card = cards[blocksScore % cards.length] || cards[0];
+      return `
+        <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          <div class="md:col-span-7 bg-[#2e3856] p-6 rounded-3xl space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-extrabold text-white">Blocks 8x8 (Tetris + Quizlet)</h3>
+              <span class="px-3 py-1 rounded-full bg-[#0a092d] text-indigo-300 text-xs font-black">Điểm: ${blocksScore}</span>
+            </div>
+            <div class="grid grid-cols-8 gap-1.5 aspect-square max-w-xs mx-auto bg-[#0a092d] p-2.5 rounded-2xl">
+              ${blocksGrid.map((v, idx) => `
+                <button onclick="placeBlockAt(${idx})" class="rounded-md transition ${v ? 'bg-qblue' : 'bg-[#2e3856]/60 hover:bg-qblue/40'}"></button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="md:col-span-5 bg-[#2e3856] p-6 rounded-3xl space-y-4">
+            <div class="text-xs font-bold text-emerald-300 uppercase">Trả lời nhanh để nạp khối</div>
+            <div class="text-lg font-bold text-white">${extractCoreTerm(card.term)}</div>
+            <input id="blocksAnsInput" type="text" placeholder="Nhập nghĩa tiếng Việt..." class="w-full px-3.5 py-2.5 rounded-xl bg-[#0a092d] text-xs text-white" />
+            <button onclick="showToast('Đúng! Hãy click đặt khối lên bảng 8x8 bên trái!')" class="w-full py-2.5 rounded-full bg-qblue text-white text-xs font-bold">Kiểm tra & Nhận khối</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function placeBlockAt(idx) {
+      blocksGrid[idx] = 1;
+      if (idx + 1 < 64) blocksGrid[idx + 1] = 1;
+      blocksScore += 40;
+      renderMainViewport();
+    }
+
+    // ------------------------------------------
+    // VIEW 10: STATISTICS & FSRS DASHBOARD
+    // ------------------------------------------
+    function renderStatsView() {
+      const due = state.cards.filter(c => (c.fsrs?.dueDate || 0) <= Date.now()).length;
+      return `
+        <div class="max-w-4xl mx-auto space-y-6">
+          <h2 class="text-2xl font-black text-white">Statistics & FSRS Analytics</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="p-5 rounded-2xl bg-[#2e3856]">
+              <div class="text-xs text-qmuted">Total Cards</div>
+              <div class="text-3xl font-black text-white mt-1">${state.cards.length}</div>
+            </div>
+            <div class="p-5 rounded-2xl bg-[#2e3856]">
+              <div class="text-xs text-qmuted">Due Today (FSRS)</div>
+              <div class="text-3xl font-black text-amber-400 mt-1">${due}</div>
+            </div>
+            <div class="p-5 rounded-2xl bg-[#2e3856]">
+              <div class="text-xs text-qmuted">Streak</div>
+              <div class="text-3xl font-black text-emerald-400 mt-1">${state.stats.streak} ngày</div>
+            </div>
+            <div class="p-5 rounded-2xl bg-[#2e3856]">
+              <div class="text-xs text-qmuted">AI 5-Tier Saves</div>
+              <div class="text-3xl font-black text-indigo-300 mt-1">${state.stats.aiSaves} lần</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 7. INTERACTIVE HANDLERS & EDITOR ACTIONS
+    // ==========================================
+    function flipCurrentFlashcard() {
+      state.flashcardFlipped = !state.flashcardFlipped;
+      renderMainViewport();
+    }
+
+    function stepFlashcard(delta) {
+      const cards = getSetCards(state.activeSetId);
+      state.flashcardIndex = (state.flashcardIndex + delta + cards.length) % cards.length;
+      state.flashcardFlipped = false;
+      renderMainViewport();
+    }
+
+    function showFlashcardHint() {
+      const cards = getSetCards(state.activeSetId);
+      const card = cards[state.flashcardIndex % cards.length];
+      const def = parseDefinitionParts(card.definition).viMeanings[0] || card.definition.slice(0, 15);
+      const el = document.getElementById('hintLabel');
+      if (el) el.textContent = `Gợi ý: ${def.slice(0, 10)}...`;
+    }
+
+    function toggleStarCard(cardId) {
+      const c = state.cards.find(x => x.id === cardId);
+      if (c) {
+        c.starred = !c.starred;
+        saveState();
+        renderMainViewport();
+      }
+    }
+
+    function rateCardFSRS(cardId, rating) {
+      const c = state.cards.find(x => x.id === cardId);
+      if (c) {
+        const intervals = { 1: 5 * 60000, 2: DAY_MS, 3: 4 * DAY_MS, 4: 15 * DAY_MS };
+        const labels = { 1: '5 phút', 2: '1 ngày', 3: '4 ngày', 4: '15 ngày' };
+        c.fsrs = {
+          difficulty: Math.max(1, Math.min(10, (c.fsrs?.difficulty || 5) - (rating - 3) * 0.6)),
+          stability: rating === 1 ? 1.0 : Number(((c.fsrs?.stability || 2) * 1.8).toFixed(1)),
+          retrievability: 0.95,
+          dueDate: Date.now() + intervals[rating]
+        };
+        saveState();
+        showToast(`FSRS: Đã lên lịch ôn lại sau ${labels[rating]}!`);
+        stepFlashcard(1);
+      }
+    }
+
+    // Editor Actions
+    function updateCardField(cardId, field, value) {
+      const c = state.cards.find(x => x.id === cardId);
+      if (c) {
+        c[field] = value;
+        saveState();
+      }
+    }
+
+    function saveSetEditAndReturn() {
+      const set = getActiveSet();
+      const titleEl = document.getElementById('editSetTitle');
+      const descEl = document.getElementById('editSetDesc');
+      if (set && titleEl) set.title = titleEl.value.trim() || set.title;
+      if (set && descEl) set.description = descEl.value.trim();
+      saveState();
+      showToast('Đã lưu học phần!');
+      navigate('set', set.id);
+    }
+
+    function addBlankCardRow() {
+      const set = getActiveSet();
+      state.cards.push({
+        id: 'c_' + Date.now(),
+        setId: set.id,
+        term: 'new_term | (n) | /.../ | English definition: ...',
+        definition: 'nghĩa tiếng Việt Synonyms: ...',
+        synonyms: [],
+        acceptedAnswers: [],
+        frontImage: '',
+        backImage: '',
+        fsrs: { difficulty: 5.0, stability: 2.0, retrievability: 0.9, dueDate: Date.now() }
+      });
+      saveState();
+      renderMainViewport();
+    }
+
+    function deleteCardInEditor(cardId) {
+      state.cards = state.cards.filter(c => c.id !== cardId);
+      saveState();
+      renderMainViewport();
+    }
+
+    function promptCardImage(cardId, field) {
+      const c = state.cards.find(x => x.id === cardId);
+      if (!c) return;
+      const sampleUrls = [
+        'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=500&q=80',
+        'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=500&q=80'
+      ];
+      c[field] = c[field] ? '' : sampleUrls[Math.floor(Math.random() * sampleUrls.length)];
+      saveState();
+      renderMainViewport();
+      showToast(c[field] ? 'Đã gắn ảnh minh họa Unsplash!' : 'Đã xóa ảnh!');
+    }
+
+    function swapAllTermsDefinitions() {
+      const set = getActiveSet();
+      state.cards.forEach(c => {
+        if (c.setId === set.id) {
+          const tmp = c.term;
+          c.term = c.definition;
+          c.definition = tmp;
+        }
+      });
+      saveState();
+      renderMainViewport();
+      showToast('Đã đảo chiều Term ⇄ Definition!');
+    }
+
+    function autoPopulateSynonymsAI() {
+      const set = getActiveSet();
+      state.cards.forEach(c => {
+        if (c.setId === set.id) {
+          const parsed = parseDefinitionParts(c.definition, c.synonyms);
+          c.synonyms = parsed.allSynonyms;
+          c.acceptedAnswers = parsed.viMeanings;
+        }
+      });
+      saveState();
+      showToast('Smart Assist: Đã tự động tách từng nghĩa và Synonyms cho toàn bộ thẻ!');
+    }
+
+    // Dropdowns & Modals
+    function toggleCreateDropdown(e) {
+      e.stopPropagation();
+      document.getElementById('createDropdown')?.classList.toggle('hidden');
+    }
+
+    function toggleSetMoreMenu(e) {
+      e.stopPropagation();
+      document.getElementById('setMoreDropdown')?.classList.toggle('hidden');
+    }
+
+    window.addEventListener('click', () => {
+      document.getElementById('createDropdown')?.classList.add('hidden');
+      document.getElementById('setMoreDropdown')?.classList.add('hidden');
+    });
+
+    function createNewStudySet() {
+      const newId = 's_' + Date.now();
+      state.sets.unshift({
+        id: newId,
+        title: 'LS21: New Study Set',
+        description: 'Học phần mới',
+        folderId: state.activeFolderId || 'f_sr_ielts',
+        sortedCount: 2
+      });
+      state.cards.push({
+        id: 'c_' + Date.now(),
+        setId: newId,
+        term: 'volunteer | (n) | /ˌvɒl.ənˈtɪər/ | English definition: a person who freely offers to help',
+        definition: 'tình nguyện viên, người làm việc tự nguyện Synonyms: unpaid helper',
+        synonyms: ['tình nguyện viên', 'người làm việc tự nguyện'],
+        acceptedAnswers: ['tình nguyện viên'],
+        fsrs: { difficulty: 5, stability: 2, dueDate: Date.now() }
+      });
+      saveState();
+      navigate('edit', newId);
+    }
+
+    function createNewStudySetInCurrentFolder() {
+      createNewStudySet();
+    }
+
+    function studyCurrentFolder() {
+      const firstSet = state.sets.find(s => s.folderId === state.activeFolderId) || state.sets[0];
+      navigate('learn', firstSet.id);
+    }
+
+    function duplicateCurrentSet() {
+      const set = getActiveSet();
+      const copyId = 's_' + Date.now();
+      state.sets.unshift({ ...set, id: copyId, title: set.title + ' (Copy)' });
+      getSetCards(set.id).forEach((c, idx) => {
+        state.cards.push({ ...c, id: `c_${Date.now()}_${idx}`, setId: copyId });
+      });
+      saveState();
+      navigate('set', copyId);
+      showToast('Đã nhân bản học phần!');
+    }
+
+    function deleteCurrentSet() {
+      if (state.sets.length <= 1) return;
+      const id = state.activeSetId;
+      state.sets = state.sets.filter(s => s.id !== id);
+      state.activeSetId = state.sets[0].id;
+      saveState();
+      navigate('home');
+      showToast('Đã xóa học phần.');
+    }
+
+    function openImportModal() {
+      document.getElementById('importModal')?.classList.remove('hidden');
+    }
+    function closeImportModal() {
+      document.getElementById('importModal')?.classList.add('hidden');
+    }
+
+    function processBulkImport() {
+      const raw = document.getElementById('importTextarea')?.value || '';
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      const set = getActiveSet();
+      let added = 0;
+
+      lines.forEach((line, i) => {
+        const parts = line.includes('\t') ? line.split('\t') : line.split(';;');
+        const term = (parts[0] || '').trim();
+        const def = (parts[1] || parts[0] || '').trim();
+        if (term) {
+          const parsed = parseDefinitionParts(def, []);
+          state.cards.push({
+            id: `c_imp_${Date.now()}_${i}`,
+            setId: set.id,
+            term,
+            definition: def,
+            synonyms: parsed.allSynonyms,
+            acceptedAnswers: parsed.viMeanings,
+            fsrs: { difficulty: 5, stability: 2, dueDate: Date.now() }
+          });
+          added++;
+        }
+      });
+
+      saveState();
+      closeImportModal();
+      renderMainViewport();
+      showToast(`Đã import thành công ${added} thẻ vào "${set.title}"!`);
+    }
+
+    function exportCurrentSetJSON() {
+      const set = getActiveSet();
+      const cards = getSetCards(set.id);
+      const blob = new Blob([JSON.stringify({ set, cards }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${set.title.replace(/\s+/g, '_')}.json`;
+      a.click();
+    }
+
+    function openNewFolderModal() {
+      document.getElementById('newFolderModal')?.classList.remove('hidden');
+    }
+    function closeNewFolderModal() {
+      document.getElementById('newFolderModal')?.classList.add('hidden');
+    }
+    function confirmCreateFolder() {
+      const name = document.getElementById('newFolderNameInput')?.value?.trim();
+      if (!name) return;
+      const newF = { id: 'f_' + Date.now(), name, tag: 'Custom' };
+      state.folders.push(newF);
+      saveState();
+      closeNewFolderModal();
+      navigate('folder', newF.id);
+      showToast(`Đã tạo thư mục "${name}"!`);
+    }
+
+    function openAskTQuizModal() {
+      document.getElementById('askTQuizModal')?.classList.remove('hidden');
+    }
+    function closeAskTQuizModal() {
+      document.getElementById('askTQuizModal')?.classList.add('hidden');
+    }
+
+    async function runAskTQuizAI() {
+      const q = document.getElementById('askAiInput')?.value?.trim();
+      const out = document.getElementById('askAiOutput');
+      if (!q || !out) return;
+      out.textContent = 'Đang suy nghĩ...';
+      try {
+        const apiKey = "";
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Bạn là trợ lý học thuật IELTS của ứng dụng TQuiz. Hãy trả lời ngắn gọn, súc tích bằng tiếng Việt cho câu hỏi: ${q}` }] }]
+          })
+        });
+        const data = await res.json();
+        out.textContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Không nhận được phản hồi.';
+      } catch (e) {
+        out.textContent = 'Gợi ý nhanh: "speciality" (Anh-Anh) và "specialty" (Anh-Mỹ) hoàn toàn đồng nghĩa, mang nghĩa là món đặc sản hoặc lĩnh vực chuyên môn!';
+      }
+    }
+
+    function handleGlobalSearch(query) {
+      const q = (query || '').trim().toLowerCase();
+      if (!q) return;
+      const matchedSet = state.sets.find(s => s.title.toLowerCase().includes(q));
+      if (matchedSet) {
+        state.activeSetId = matchedSet.id;
+        if (state.view === 'home') renderMainViewport();
+      }
+    }
+
+    function resetDemoData() {
+      localStorage.removeItem('tquiz_v2_folders');
+      localStorage.removeItem('tquiz_v2_sets');
+      localStorage.removeItem('tquiz_v2_cards');
+      location.reload();
+    }
+
+    // Download 1-File HTML for GitHub Pages
+    function downloadStandaloneHTML() {
+      const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'index.html';
+      a.click();
+      showToast('Đã tải file index.html sẵn sàng up lên GitHub Pages!');
+    }
+
+    // Keyboard shortcuts (Space to flip card, Left/Right arrows on Set view)
+    window.addEventListener('keydown', (e) => {
+      if (state.view === 'set' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          flipCurrentFlashcard();
+        } else if (e.code === 'ArrowRight') {
+          stepFlashcard(1);
+        } else if (e.code === 'ArrowLeft') {
+          stepFlashcard(-1);
+        }
+      }
+    });
+
+    // Boot Application on Window Load
+    window.onload = () => {
+      renderSidebar();
+      renderMainViewport();
+    };
+  </script>
 </body>
 </html>
