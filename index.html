@@ -276,22 +276,56 @@
                 const text = document.getElementById('bulk-textarea').value;
                 const lines = text.split('\n');
                 const newCards = [];
+                
                 lines.forEach(line => {
-                    const parts = line.split(/[\t|]/);
-                    if (parts.length >= 2) {
-                        const term = parts[0].trim();
-                        const definition = parts[1].trim();
-                        if (term && definition) {
-                            newCards.push({ id: 'c-' + Math.random(), term, definition, frontImage: '', backImage: '' });
+                    if (!line.trim()) return;
+                    let term = '';
+                    let definition = '';
+
+                    // Intelligent split: support '|', tab, or first occurrence of phonetic/definition
+                    if (line.includes('|')) {
+                        const parts = line.split('|');
+                        term = parts[0].trim();
+                        definition = parts.slice(1).join('|').trim();
+                    } else if (line.includes('\t')) {
+                        const parts = line.split('\t');
+                        term = parts[0].trim();
+                        definition = parts.slice(1).join(' ').trim();
+                    } else {
+                        // If user pastes long text like "retire /rɪˈtaɪər/ English definition..."
+                        const match = line.match(/^([a-zA-Z\s-]+)([\/|\(].*)/);
+                        if (match) {
+                            term = match[1].trim();
+                            definition = line.substring(term.length).trim();
+                        } else {
+                            const firstSpace = line.indexOf(' ');
+                            if (firstSpace > 0) {
+                                term = line.substring(0, firstSpace).trim();
+                                definition = line.substring(firstSpace).trim();
+                            } else {
+                                term = line.trim();
+                                definition = '';
+                            }
                         }
                     }
+
+                    if (term) {
+                        newCards.push({
+                            id: 'c-' + Math.random(),
+                            term: term,
+                            definition: definition || term,
+                            frontImage: '',
+                            backImage: ''
+                        });
+                    }
                 });
+
                 if (newCards.length > 0 && this.editingSet) {
                     this.editingSet.cards.push(...newCards);
                     renderApp();
                     this.closeBulkModal();
                 } else {
-                    alert('Không tìm thấy dữ liệu hợp lệ. Vui lòng định dạng: Thuật ngữ | Định nghĩa');
+                    alert('Không tìm thấy dữ liệu hợp lệ. Vui lòng định dạng: Thuật ngữ | Định nghĩa hoặc Tab');
                 }
             },
 
