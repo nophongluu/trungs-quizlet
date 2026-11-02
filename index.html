@@ -1,404 +1,243 @@
 <!DOCTYPE html>
-<html lang="vi" class="dark">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trung's Quizlet - Ứng dụng Học Tập Thông Minh</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: { darkBg: '#0a092d', cardBg: '#131432' }
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; background-color: #0a092d; color: #f8fafc; }</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trung's Quizlet - Học tập thông minh</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%234f46e5'/%3E%3Cpath d='M6 7h12M12 7v11' stroke='white' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#0a092d;--c:#131432;--b:#272a55;--p:#4f46e5;--t:#f1f5f9;--m:#94a3b8;--ok:#10b981;--no:#f43f5e}
+*{box-sizing:border-box}body{margin:0;font:15px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--t)}
+header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 20px;background:#131432ee;border-bottom:1px solid var(--b);backdrop-filter:blur(8px)}
+.logo{display:flex;gap:10px;align-items:center;cursor:pointer;font-weight:900;font-size:18px}
+.T{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#4f46e5,#06b6d4);display:grid;place-items:center}.T svg{width:26px;height:26px}
+.layout{display:flex}aside{width:270px;padding:14px;border-right:1px solid var(--b);background:var(--c);min-height:calc(100vh - 62px)}
+main{flex:1;padding:24px;max-width:1000px;margin:0 auto;min-width:0}
+@media(max-width:800px){.layout{flex-direction:column}aside{width:100%;min-height:0;max-height:210px;overflow:auto;border-right:0;border-bottom:1px solid var(--b)}main{padding:16px;width:100%}}
+.card{background:var(--c);border:1px solid var(--b);border-radius:20px;padding:18px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;background:var(--p);color:#fff;font-size:14px;display:inline-block}
+.btn.g{background:#1e2150;color:#c7d2fe}.btn.r{background:#4c1d2e;color:#fda4af}.btn:hover{filter:brightness(1.15)}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+input,textarea,select{width:100%;background:#0a0b16;color:var(--t);border:1px solid var(--b);border-radius:12px;padding:10px 12px;font:inherit}
+input[type=radio]{width:auto}
+.fold{display:flex;justify-content:space-between;align-items:center;padding:7px 8px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600}
+.fold:hover,.fold.on{background:#4f46e533}.fold button{background:0;border:0;cursor:pointer;font-size:12px;padding:2px}
+.pic{max-width:100%;max-height:170px;border-radius:12px;margin-top:10px;object-fit:contain;display:block;margin-left:auto;margin-right:auto}
+.flip3{perspective:1000px;cursor:pointer;height:320px}.in{position:relative;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flip .in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:var(--c);border:1px solid #4f46e566;border-radius:24px;overflow:auto}
+.face.bk{transform:rotateY(180deg)}
+.big{font-size:26px;font-weight:800}.sub{color:var(--m);font-size:13px;font-weight:500}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;background:#1a1c42;border:1px solid var(--b);color:var(--t);padding:12px;border-radius:12px;cursor:pointer;font:inherit}
+.opt:hover{border-color:var(--p)}.ok{color:var(--ok)}.no{color:var(--no)}
+.bk-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;max-width:380px;margin:auto}
+.cell{aspect-ratio:1;background:#1a1c42;border-radius:5px;cursor:pointer}.cell.on{background:linear-gradient(135deg,#6366f1,#06b6d4)}
+.mb{position:fixed;inset:0;background:#000a;display:grid;place-items:center;z-index:20;padding:16px}
+.mc{background:var(--c);border:1px solid var(--b);border-radius:20px;padding:20px;max-width:580px;width:100%;max-height:85vh;overflow:auto}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.bar{height:8px;background:#1a1c42;border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--p);transition:width .3s}
+.rates{grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}.rates .btn{padding:10px 4px;font-size:13px}.rates small{display:block;opacity:.8;font-weight:500}
+canvas{width:100%;max-width:640px;border-radius:20px;border:1px solid var(--b);display:block;margin:auto;touch-action:manipulation}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:12px}.thumbs img{width:100%;height:90px;object-fit:cover;border-radius:10px;cursor:pointer;border:2px solid transparent}.thumbs img:hover{border-color:var(--p)}
+h1,h2,h3{margin:12px 0}
+</style>
 </head>
-<body class="min-h-screen antialiased selection:bg-indigo-500 selection:text-white">
-    <div id="app" class="flex flex-col min-h-screen">
-        <!-- Header -->
-        <header class="sticky top-0 z-40 bg-[#131432]/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="window.appState.navigate('home')">
-                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg font-black text-xl tracking-tighter" style="font-family: 'Inter', sans-serif;">T</div>
-                <span class="font-black text-lg bg-gradient-to-r from-indigo-400 via-cyan-300 to-indigo-200 bg-clip-text text-transparent">Trung's Quizlet</span>
-            </div>
-            <div class="flex items-center gap-3">
-                <button onclick="window.appState.openNewSetModal()" class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm cursor-pointer shadow-lg shadow-indigo-600/30">
-                    + Tạo học phần
-                </button>
-            </div>
-        </header>
+<body>
+<header>
+  <div class="logo" onclick="go('home')"><div class="T"><svg viewBox="0 0 24 24"><path d="M5 6.5h14M12 6.5v12" stroke="#fff" stroke-width="4.6" stroke-linecap="round" fill="none"/></svg></div><span>Trung's Quizlet</span></div>
+  <div class="row"><button class="btn" onclick="newSet()">+ Tạo học phần</button><button class="btn g" title="Sao lưu dữ liệu" onclick="exportData()">⬇ Sao lưu</button><label class="btn g" title="Khôi phục">⬆ Khôi phục<input type="file" accept=".json" hidden onchange="importData(this)"></label></div>
+</header>
+<div class="layout"><aside id="side"></aside><main id="main"></main></div>
+<div id="modal"></div>
+<script>
+const KEY='trungs_quizlet_data_v3',$=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const shuf=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const blank=()=>({id:uid(),term:'',definition:'',frontImage:'',backImage:'',srs:null});
 
-        <!-- Main Layout -->
-        <div class="flex flex-1">
-            <!-- Sidebar -->
-            <aside class="w-64 min-h-[calc(100vh-65px)] bg-[#131432] border-r border-slate-800 p-4 hidden md:block space-y-6">
-                <button onclick="window.appState.navigate('home')" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl font-bold text-sm cursor-pointer bg-indigo-600 text-white shadow-lg">
-                    🏠 Trang chủ
-                </button>
-                <div class="space-y-2 pt-2 border-t border-slate-800">
-                    <div class="flex items-center justify-between px-3 text-xs font-extrabold uppercase text-slate-400">
-                        <span>Your Folders</span>
-                        <button onclick="window.appState.openNewFolderModal()" class="text-indigo-400 font-bold text-xs cursor-pointer hover:underline">+ New</button>
-                    </div>
-                    <div id="sidebar-folders" class="space-y-1"></div>
-                </div>
-            </aside>
+/* ---------- Dữ liệu & localStorage ---------- */
+function seed(){const mk=(t,d)=>({...blank(),term:t,definition:d});return{folders:[{id:'f-sr',name:'SR - Ielts',parent:null},{id:'f-sr1',name:'Listening',parent:'f-sr'},{id:'f-cn',name:'Tiếng Trung',parent:null},{id:'f-su',name:'SU - Ielts',parent:null}],
+sets:[{id:'set-vol',title:'LS19: Volunteer work',description:'Từ vựng tình nguyện và hoạt động cộng đồng',folderId:'f-sr',cards:[
+mk('optional | (adj) | /ˈɒp.ʃən.əl/ | Example: Attendance is optional','tự nguyện, không bắt buộc, tuỳ chọn'),
+mk('speciality | (n) | /ˌspeʃ.iˈæl.ə.ti/','món đặc sản, nét đặc trưng'),
+mk('volunteer | (n) | /ˌvɒl.ənˈtɪər/','tình nguyện viên'),
+mk('charity | (n) | /ˈtʃær.ə.ti/','tổ chức từ thiện'),
+mk('donate | (v) | /dəʊˈneɪt/','quyên góp, hiến tặng'),
+mk('community | (n) | /kəˈmjuː.nə.ti/','cộng đồng')]}]}}
+function load(){try{let s=JSON.parse(localStorage.getItem(KEY));if(!s){const o=JSON.parse(localStorage.getItem('trungs_quizlet_data_v2'));if(o&&o.sets)s=o}
+if(s&&s.sets){s.folders=(s.folders||[]).map(f=>({parent:null,...f}));s.sets.forEach(x=>{x.description=x.description||'';x.cards=(x.cards||[]).map(c=>({...blank(),...c}))});return s}}catch(e){}return seed()}
+let D=load(),S={view:'home',setId:null,folderId:null},ses=null,raf=0;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){alert('Bộ nhớ trình duyệt đã đầy (có thể do ảnh tải lên quá nặng). Hãy dùng URL ảnh thay vì tải ảnh.')}}
+const set=()=>D.sets.find(x=>x.id==S.setId),card=(s,id)=>s.cards.find(c=>c.id==id);
+const head=c=>c.term.split('|')[0].trim(),rest=c=>c.term.split('|').slice(1).map(x=>x.trim()).filter(Boolean).join(' · ');
+const img=u=>u?`<img class="pic" src="${esc(u)}" alt="" onerror="this.style.display='none'">`:'';
+const path=id=>{const f=D.folders.find(x=>x.id==id);return f?(f.parent?path(f.parent)+' / ':'')+f.name:''};
+function modal(h){$('#modal').innerHTML=h?`<div class="mb" onclick="if(event.target==this)modal()"><div class="mc">${h}</div></div>`:''}
 
-            <!-- Main Dynamic Container -->
-            <main id="main-content" class="flex-1 p-4 sm:p-8 max-w-7xl mx-auto space-y-8"></main>
-        </div>
-    </div>
+/* ---------- Chấm điểm thông minh 3 tầng ---------- */
+const norm=s=>String(s).toLowerCase().replace(/\([^)]*\)/g,' ').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();
+const flat=s=>norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
+function lev(a,b){const m=[];for(let i=0;i<=a.length;i++)m[i]=[i];for(let j=1;j<=b.length;j++)m[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]==b[j-1]?0:1));return m[a.length][b.length]}
+/* dir 'en': người học viết từ tiếng Anh | dir 'vi': viết nghĩa tiếng Việt */
+function grade(ans,c,dir){const a=flat(ans);if(!a)return 0;const raw=dir=='en'?head(c):c.definition;
+ const cands=[raw,...raw.split(/[,;/]|\bhoặc\b|\bor\b/i)].map(flat).filter(Boolean);
+ if(cands.includes(a))return 1;                                   /* tầng 1: khớp bỏ hoa/thường, dấu câu, ngoặc đơn */
+ if(dir=='en')return 0;
+ for(const t of cands){const tol=t.length>=8?2:t.length>=5?1:0;if(tol&&lev(a,t)<=tol)return 1}  /* tầng 2: sai chính tả nhẹ */
+ const at=a.split(' ');for(const t of cands){const tt=t.split(' ');                                  /* tầng 3: diễn đạt tương đương */
+  if(a.length>=3&&at.every(w=>tt.includes(w)))return 1;const hit=tt.filter(w=>at.includes(w)).length;if(tt.length>1&&hit/tt.length>=.7&&at.length<=tt.length+1)return 1}
+ return 0}
+const pr=(c,dir)=>dir=='en'?{t:esc(c.definition),im:img(c.backImage),lab:'Nghĩa → viết/chọn từ tiếng Anh'}:{t:`${esc(head(c))}<div class="sub">${esc(rest(c))}</div>`,im:img(c.frontImage),lab:'Từ → viết/chọn nghĩa tiếng Việt'};
+const an=(c,dir)=>dir=='en'?head(c):c.definition,anImg=(c,dir)=>dir=='en'?img(c.frontImage):img(c.backImage);
+function mcOpts(s,c,dir){const f=x=>dir=='en'?head(x):x.definition;const d=shuf(s.cards.filter(x=>x.id!=c.id&&f(x)!=f(c))).slice(0,3).map(f);const list=shuf([f(c),...d]);return{list,ci:list.indexOf(f(c))}}
 
-    <script>
-        const LOCAL_STORAGE_KEY = 'trungs_quizlet_data_v2';
-        
-        const defaultFolders = [
-            { id: 'f-sr', name: 'SR - Ielts' },
-            { id: 'f-cn', name: 'Tiếng Trung' },
-            { id: 'f-su', name: 'SU - Ielts' }
-        ];
+/* ---------- Điều hướng ---------- */
+const STARTS={flash:()=>startFlash(),learn:()=>startLearn('learn'),written:()=>startLearn('written'),test:startTest,blocks:blocksStart};
+function go(v,o){S={...S,view:v,...(o||{})};ses=null;if(STARTS[v])STARTS[v]();render();window.scrollTo(0,0)}
+function render(){cancelAnimationFrame(raf);side();const v=S.view;
+ $('#main').innerHTML=({home:vHome,folder:vFolder,set:vSet,edit:vEdit,flash:vFlash,learn:vLearn,written:vLearn,test:vTest,blast:vBlast,blocks:vBlocks})[v]();
+ if(v=='blast'&&set().cards.length>1)blast();const i=$('#ai');if(i)i.focus()}
 
-        const defaultSets = [
-            {
-                id: 'set-vol',
-                title: 'LS19: Volunteer work',
-                description: 'Bộ từ vựng tình nguyện và hoạt động cộng đồng',
-                folderId: 'f-sr',
-                cards: [
-                    { id: 'c1', term: 'optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen | Example: Attendance is optional', definition: 'tự nguyện, không bắt buộc, tuỳ chọn', frontImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=80', backImage: '' },
-                    { id: 'c2', term: 'speciality | (n) | /,speʃ.iˈæl.ə.ti/ | English definition: a product or service a region is famous for', definition: 'món đặc sản, nét đặc trưng chuyên biệt', frontImage: '', backImage: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&auto=format&fit=crop&q=80' }
-                ]
-            }
-        ];
+/* ---------- Thư mục & thư mục con ---------- */
+function tree(p=null,d=0){return D.folders.filter(f=>(f.parent||null)==p).map(f=>`<div class="fold ${S.folderId==f.id&&S.view=='folder'?'on':''}" style="padding-left:${8+d*14}px" onclick="go('folder',{folderId:'${f.id}'})"><span>📁 ${esc(f.name)}</span><span><button title="Tạo thư mục con" onclick="addFolder('${f.id}',event)">➕</button><button title="Đổi tên" onclick="renFolder('${f.id}',event)">✏️</button><button title="Xoá" onclick="delFolder('${f.id}',event)">🗑️</button></span></div>`+tree(f.id,d+1)).join('')}
+function side(){$('#side').innerHTML=`<button class="btn" style="width:100%" onclick="go('home')">🏠 Trang chủ</button><div class="row" style="justify-content:space-between;margin:16px 0 6px"><b class="sub">THƯ MỤC</b><button class="btn g" style="padding:3px 10px" onclick="addFolder(null)">+ Mới</button></div>${tree()||'<span class="sub">Chưa có thư mục</span>'}`}
+function addFolder(parent,e){e&&e.stopPropagation();const n=prompt(parent?'Tên thư mục con:':'Tên thư mục mới:');if(n&&n.trim()){D.folders.push({id:'f-'+uid(),name:n.trim(),parent:parent||null});save();render()}}
+function renFolder(id,e){e&&e.stopPropagation();const f=D.folders.find(x=>x.id==id),n=prompt('Tên mới:',f.name);if(n&&n.trim()){f.name=n.trim();save();render()}}
+function delFolder(id,e){e&&e.stopPropagation();if(!confirm('Xoá thư mục này và toàn bộ thư mục con? (Học phần bên trong sẽ được giữ lại ở trang chủ)'))return;
+ const ids=[id];for(let i=0;i<ids.length;i++)D.folders.filter(f=>f.parent==ids[i]).forEach(f=>ids.push(f.id));
+ D.folders=D.folders.filter(f=>!ids.includes(f.id));D.sets.forEach(s=>{if(ids.includes(s.folderId))s.folderId=null});save();
+ if(ids.includes(S.folderId)){S.folderId=null;S.view='home'}render()}
+function newSet(fid){const t=prompt('Tiêu đề học phần mới:');if(!t||!t.trim())return;const f=fid||(S.view=='folder'?S.folderId:null);
+ const s={id:uid(),title:t.trim(),description:'',folderId:f||null,cards:[blank(),blank()]};D.sets.unshift(s);save();go('edit',{setId:s.id})}
+function delSet(){if(confirm('Xoá học phần này?')){D.sets=D.sets.filter(x=>x.id!=S.setId);save();go('home')}}
 
-        function loadStoredData() {
-            try {
-                const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (saved) return JSON.parse(saved);
-            } catch (e) {}
-            return { folders: defaultFolders, sets: defaultSets };
-        }
+/* ---------- Các màn hình chính ---------- */
+const setCard=s=>`<div class="card" style="cursor:pointer" onclick="go('set',{setId:'${s.id}'})"><span class="sub">${s.cards.length} thuật ngữ${s.folderId?' · 📁 '+esc(path(s.folderId)):''}</span><h3 style="margin:6px 0 2px">${esc(s.title)}</h3><div class="sub">${esc(s.description)}</div></div>`;
+function vHome(){return `<h2>Học phần của bạn</h2><div class="grid">${D.sets.map(setCard).join('')||'<span class="sub">Bấm "+ Tạo học phần" để bắt đầu.</span>'}</div>`}
+function vFolder(){const f=D.folders.find(x=>x.id==S.folderId);if(!f)return vHome();const subs=D.folders.filter(x=>x.parent==f.id),ss=D.sets.filter(x=>x.folderId==f.id);
+ return `<button class="btn g" onclick="${f.parent?`go('folder',{folderId:'${f.parent}'})`:`go('home')`}">← Quay lại</button><h1>📁 ${esc(path(f.id))}</h1><div class="row"><button class="btn" onclick="newSet('${f.id}')">+ Học phần</button><button class="btn g" onclick="addFolder('${f.id}')">+ Thư mục con</button><button class="btn g" onclick="renFolder('${f.id}')">✏️ Đổi tên</button><button class="btn r" onclick="delFolder('${f.id}')">🗑️ Xoá</button></div>
+ ${subs.length?`<h3>Thư mục con</h3><div class="grid">${subs.map(x=>`<div class="card" style="cursor:pointer" onclick="go('folder',{folderId:'${x.id}'})">📁 <b>${esc(x.name)}</b></div>`).join('')}</div>`:''}<h3>Học phần</h3><div class="grid">${ss.map(setCard).join('')||'<span class="sub">Chưa có học phần nào.</span>'}</div>`}
+function vSet(){const s=set();const m=[['flash','📚 Flashcards','Anki SRS 4 mức','#4f46e5'],['learn','🧠 Learn','Thích ứng AI','#06b6d4'],['written','✍️ Written','Tự luận 2 chiều','#8b5cf6'],['test','📝 Test','Kiểm tra tổng hợp','#10b981'],['blast','🚀 Blast','Bắn thiên thạch','#f59e0b'],['blocks','📦 Blocks','Xếp gạch 8x8','#ec4899']];
+ return `<button class="btn g" onclick="${s.folderId?`go('folder',{folderId:'${s.folderId}'})`:`go('home')`}">← Quay lại</button><h1>${esc(s.title)}</h1><p class="sub">${esc(s.description)} · ${s.cards.length} thuật ngữ</p>
+ <div class="row" style="margin-bottom:16px"><button class="btn g" onclick="go('edit')">✏️ Chỉnh sửa</button><button class="btn r" onclick="delSet()">🗑️ Xoá</button></div>
+ <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">${m.map(x=>`<div class="card" style="cursor:pointer;border-color:${x[3]}88" onclick="${s.cards.length?`go('${x[0]}')`:`alert('Hãy thêm thẻ trước')`}"><b>${x[1]}</b><div class="sub">${x[2]}</div></div>`).join('')}</div>
+ <h3>Danh sách thuật ngữ</h3>${s.cards.map(c=>`<div class="card" style="margin-bottom:10px"><div class="grid" style="grid-template-columns:1fr 1fr"><div><b>${esc(head(c))}</b><div class="sub">${esc(rest(c))}</div>${img(c.frontImage)}</div><div>${esc(c.definition)}${img(c.backImage)}</div></div></div>`).join('')}`}
 
-        function saveStoredData(folders, sets) {
-            try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ folders, sets }));
-            } catch (e) {}
-        }
+/* ---------- Trình chỉnh sửa + hình ảnh 2 mặt ---------- */
+function vEdit(){const s=set();return `<button class="btn g" onclick="go('set')">← Xong</button><h2>Chỉnh sửa học phần</h2>
+ <div class="card"><input value="${esc(s.title)}" placeholder="Tiêu đề" oninput="set().title=this.value;save()"><br><br><input value="${esc(s.description)}" placeholder="Mô tả" oninput="set().description=this.value;save()"><br><br>
+ <select onchange="set().folderId=this.value||null;save()"><option value="">— Không thuộc thư mục —</option>${D.folders.map(f=>`<option value="${f.id}" ${f.id==s.folderId?'selected':''}>${esc(path(f.id))}</option>`).join('')}</select></div>
+ <div class="row" style="margin:14px 0"><button class="btn" onclick="addCard()">+ Thêm thẻ</button><button class="btn g" onclick="bulk()">📥 Nhập hàng loạt</button></div>
+ ${s.cards.map((c,i)=>`<div class="card" style="margin-bottom:12px"><div class="row" style="justify-content:space-between"><b>#${i+1}</b><button class="btn r" onclick="delCard('${c.id}')">🗑️</button></div>
+ <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">${[['term','frontImage','Mặt trước: từ | loại từ | phiên âm | ví dụ'],['definition','backImage','Mặt sau: nghĩa']].map(([k,ik,lb])=>`<div><label class="sub">${lb}</label><textarea rows="2" oninput="upd('${c.id}','${k}',this.value)">${esc(c[k])}</textarea>${img(c[ik])}
+ <div class="row" style="margin-top:8px"><input style="flex:1;min-width:110px" placeholder="Dán URL ảnh" value="${c[ik].startsWith('data:')?'':esc(c[ik])}" onchange="setImg('${c.id}','${ik}',this.value)"><button class="btn g" title="Tìm ảnh trên mạng" onclick="openImg('${c.id}','${ik}')">🔍</button><label class="btn g" title="Tải ảnh lên">📁<input type="file" accept="image/*" hidden onchange="upl('${c.id}','${ik}',this)"></label>${c[ik]?`<button class="btn r" onclick="setImg('${c.id}','${ik}','')">✖</button>`:''}</div></div>`).join('')}</div></div>`).join('')}`}
+function upd(id,k,v){card(set(),id)[k]=v;save()}
+function addCard(){set().cards.push(blank());save();render()}
+function delCard(id){const s=set();s.cards=s.cards.filter(c=>c.id!=id);save();render()}
+function setImg(id,k,v){card(set(),id)[k]=v.trim();save();render()}
+function upl(id,k,inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const sc=Math.min(1,360/Math.max(im.width,im.height)),cv=document.createElement('canvas');cv.width=im.width*sc;cv.height=im.height*sc;cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);setImg(id,k,cv.toDataURL('image/jpeg',.72))};im.src=r.result};r.readAsDataURL(f)}
+function openImg(id,k){const c=card(set(),id),q=k=='frontImage'?head(c):c.definition.split(/[,;]/)[0];
+ modal(`<h3 style="margin-top:0">🔍 Tìm ảnh minh hoạ</h3><div class="row"><input id="iq" style="flex:1" value="${esc(q)}" onkeydown="if(event.key=='Enter')doImg('${id}','${k}')"><button class="btn" onclick="doImg('${id}','${k}')">Tìm</button></div><div id="ir" class="sub" style="margin-top:10px">Nguồn: Wikimedia Commons. Có thể <a style="color:#818cf8" target="_blank" rel="noopener" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}">tìm trên Google Ảnh</a> rồi dán URL.</div>`);doImg(id,k)}
+async function doImg(id,k){const q=$('#iq').value.trim(),r=$('#ir');if(!q)return;r.textContent='Đang tìm...';
+ try{const j=await(await fetch('https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=16&prop=imageinfo&iiprop=url&iiurlwidth=360&format=json&origin=*&gsrsearch='+encodeURIComponent(q+' filetype:bitmap'))).json();
+  const L=Object.values((j.query||{}).pages||{}).map(p=>p.imageinfo&&p.imageinfo[0]&&p.imageinfo[0].thumburl).filter(Boolean);
+  window._imgs=L;r.innerHTML=L.length?`<div class="thumbs">${L.map((u,i)=>`<img src="${esc(u)}" loading="lazy" onclick="pickImg('${id}','${k}',${i})">`).join('')}</div>`:'Không có kết quả. Hãy thử từ khoá tiếng Anh khác hoặc dán URL ảnh.'}
+ catch(e){r.textContent='Không tìm được ảnh (kiểm tra kết nối mạng) — hãy dán URL hoặc tải ảnh lên.'}}
+function pickImg(id,k,i){card(set(),id)[k]=window._imgs[i];save();modal();render()}
+function bulk(){modal(`<h3 style="margin-top:0">📥 Nhập hàng loạt</h3><p class="sub">Mỗi dòng một thẻ: <b>từ [Tab] nghĩa</b> hoặc <b>từ = nghĩa</b> (hoặc " - ").</p><textarea id="bt" rows="9"></textarea><br><br><button class="btn" onclick="doBulk()">Thêm thẻ</button>`)}
+function doBulk(){const s=set();$('#bt').value.split('\n').forEach(l=>{const m=l.match(/^(.*?)(?:\t| = | - )(.+)$/);if(m)s.cards.push({...blank(),term:m[1].trim(),definition:m[2].trim()})});save();modal();render()}
 
-        const initialData = loadStoredData();
+/* ---------- Flashcards + Anki SRS ---------- */
+function startFlash(all){const s=set(),now=Date.now(),q=s.cards.filter(c=>all||!c.srs||c.srs.due<=now).map(c=>c.id);ses={q:shuf(q),flip:0,all,n:q.length}}
+function nxt(c,r){const x=c.srs||{ease:2.5,int:0,due:0};let e=x.ease,i=x.int;if(r==0)return{ease:Math.max(1.3,e-.2),int:0,d:1/1440};
+ if(r==1){e=Math.max(1.3,e-.15);i=Math.max(.25,i*1.2)}else if(r==2)i=i?i*e:1;else{e+=.15;i=i?i*e*1.3:4}return{ease:e,int:i,d:i}}
+const fmt=d=>d<.01?'1 phút':d<1?Math.round(d*24)+' giờ':Math.round(d)+' ngày';
+function flipC(el){if(!el)return;el.classList.toggle('flip');ses.flip^=1;$('#rates').style.display=ses.flip?'grid':'none'}
+function rate(r){const s=set(),id=ses.q.shift(),c=card(s,id),n=nxt(c,r);c.srs={ease:n.ease,int:n.int,due:Date.now()+n.d*864e5};if(r==0)ses.q.push(id);ses.flip=0;save();render()}
+function vFlash(){const s=set(),q=ses.q;const back=`<button class="btn g" onclick="go('set')">← Quay lại</button>`;
+ if(!q.length)return back+`<div class="card" style="text-align:center;margin-top:16px"><h2>🎉 Đã ôn xong thẻ đến hạn!</h2><p class="sub">Các thẻ còn lại sẽ đến hạn theo lịch lặp ngắt quãng.</p><button class="btn" onclick="startFlash(1);render()">Ôn tất cả ${s.cards.length} thẻ</button></div>`;
+ const c=card(s,q[0]),L=['Again','Hard','Good','Easy'],C=['r','g','','g'];
+ return back+`<div class="bar" style="margin:14px 0"><i style="width:${ses.n?100-q.length/ses.n*100:0}%"></i></div><div class="sub" style="text-align:right;margin-bottom:6px">Còn ${q.length} thẻ · Space để lật · phím 1-4 để chấm</div>
+ <div class="flip3" onclick="flipC(this)"><div class="in"><div class="face"><div class="big">${esc(head(c))}</div><div class="sub">${esc(rest(c))}</div>${img(c.frontImage)}</div><div class="face bk"><div class="big">${esc(c.definition)}</div>${img(c.backImage)}</div></div></div>
+ <div id="rates" class="rates" style="display:${ses.flip?'grid':'none'}">${L.map((l,i)=>`<button class="btn ${C[i]}" style="${i==0?'background:#7f1d3a':i==3?'background:#065f46':''}" onclick="rate(${i})">${i+1}. ${l}<small>${fmt(nxt(c,i).d)}</small></button>`).join('')}</div>`}
 
-        const appState = {
-            view: 'home',
-            activeSetId: 'set-vol',
-            activeFolderId: null,
-            flashcardIndex: 0,
-            flashcardFlipped: false,
-            learnIndex: 0,
-            learnQueue: [],
-            learnAnswer: '',
-            learnResult: null,
-            gameMode: 'menu',
-            folders: initialData.folders,
-            sets: initialData.sets,
+/* ---------- Learn & Written (2 chiều ngẫu nhiên Anh ⇄ Việt) ---------- */
+function startLearn(mode){const s=set();ses={mode,q:shuf(s.cards).map(c=>({id:c.id,dir:Math.random()<.5?'en':'vi',st:mode=='learn'&&s.cards.length>=3?0:1})),total:s.cards.length,done:0,wrong:0,res:null}}
+function ans(v){const s=set(),q=ses.q[0],c=card(s,q.id);let ok,val;if(q.st==0){ok=v==q.opts.ci;val=q.opts.list[v]}else{val=v;ok=grade(v,c,q.dir)}ses.res={ok,val,c,q};render()}
+function nextQ(){const q=ses.q.shift();if(ses.res.ok)ses.done++;else{ses.wrong++;q.st=1;q.opts=null;ses.q.splice(Math.min(2,ses.q.length),0,q)}ses.res=null;render()}
+function override(){ses.res.ok=true;render()}
+function vLearn(){const s=set(),q=ses.q[0];let h=`<button class="btn g" onclick="go('set')">← Quay lại</button><div class="bar" style="margin:14px 0"><i style="width:${ses.done/ses.total*100}%"></i></div>`;
+ if(!q)return h+`<div class="card" style="text-align:center"><h2>🎉 Hoàn thành!</h2><p>Bạn đã nắm ${ses.total} thuật ngữ, trả lời sai ${ses.wrong} lượt.</p><button class="btn" onclick="go('${S.view}')">Học lại</button></div>`;
+ const c=card(s,q.id),p=pr(c,q.dir),r=ses.res;h+=`<div class="card"><span class="sub">${q.st?'✍️ Tự luận':'🔘 Trắc nghiệm'} · ${p.lab} · ${ses.done}/${ses.total}</span><div class="big" style="margin:10px 0">${p.t}</div>${p.im}`;
+ if(!r){if(q.st==0){q.opts=q.opts||mcOpts(s,c,q.dir);h+=q.opts.list.map((o,i)=>`<button class="opt" onclick="ans(${i})">${esc(o)}</button>`).join('')}
+  else h+=`<input id="ai" autocomplete="off" placeholder="${q.dir=='en'?'Gõ từ tiếng Anh...':'Gõ nghĩa tiếng Việt...'}" style="margin:14px 0" onkeydown="if(event.key=='Enter')ans(this.value)"><div class="row"><button class="btn" onclick="ans($('#ai').value)">Kiểm tra</button><button class="btn g" onclick="ans('')">Không biết</button></div>`}
+ else h+=`<div class="${r.ok?'ok':'no'}" style="margin:14px 0;font-weight:800">${r.ok?'✅ Chính xác!':'❌ Chưa đúng'}</div>${r.val?`<div class="sub">Bạn trả lời: ${esc(r.val)}</div>`:''}<div>Đáp án: <b>${esc(an(c,q.dir))}</b></div><div class="sub">${esc(rest(c))}</div>${anImg(c,q.dir)}<div class="row" style="margin-top:14px"><button class="btn" onclick="nextQ()">Tiếp tục (Enter)</button>${r.ok?'':'<button class="btn g" onclick="override()">Tôi đúng</button>'}</div>`;
+ return h+'</div>'}
 
-            persist() {
-                saveStoredData(this.folders, this.sets);
-            },
+/* ---------- Test ---------- */
+function startTest(){const s=set();ses={sub:false,qs:shuf(s.cards).map(c=>{const dir=Math.random()<.5?'en':'vi';let t=['mc','tf','w'][Math.random()*3|0];if(s.cards.length<3&&t!='w')t='w';const o={id:c.id,t,dir};
+ if(t=='mc')o.opts=mcOpts(s,c,dir);if(t=='tf'){const ot=shuf(s.cards.filter(x=>x.id!=c.id))[0];o.truth=!ot||Math.random()<.5;o.shown=o.truth?c:ot}return o})}}
+function submitTest(){const s=set();ses.qs.forEach((q,i)=>{const c=card(s,q.id);if(q.t=='w'){q.val=$('#w'+i).value;q.ok=grade(q.val,c,q.dir)}else{const r=document.querySelector(`input[name=q${i}]:checked`),v=r?+r.value:-1;
+ if(q.t=='mc'){q.val=v>=0?q.opts.list[v]:'';q.ok=v==q.opts.ci}else{q.val=v==1?'Đúng':v==0?'Sai':'';q.ok=v>=0&&(v==1)==q.truth}}});ses.sub=true;render();window.scrollTo(0,0)}
+function vTest(){const s=set(),sc=ses.qs.filter(q=>q.ok).length;let h=`<button class="btn g" onclick="go('set')">← Quay lại</button><h2>📝 Bài kiểm tra${ses.sub?` — ${sc}/${ses.qs.length} (${Math.round(sc/ses.qs.length*100)}%)`:''}</h2>`;
+ h+=ses.qs.map((q,i)=>{const c=card(s,q.id);let body,p=pr(c,q.dir);
+  if(q.t=='tf'){body=`<div class="big" style="font-size:19px">“${esc(head(c))}” nghĩa là “${esc(q.shown.definition)}”?</div>${img(c.frontImage)}${img(q.shown.backImage)}`;}else body=`<div class="big" style="font-size:19px">${p.t}</div>${p.im}`;
+  const correct=q.t=='tf'?(q.truth?'Đúng':'Sai'):an(c,q.dir);
+  if(ses.sub)return `<div class="card" style="margin-bottom:12px;border-color:${q.ok?'#10b98188':'#f43f5e88'}"><b class="${q.ok?'ok':'no'}">${q.ok?'✅':'❌'} Câu ${i+1}</b>${body}<div class="sub" style="margin-top:8px">Bạn chọn/viết: ${esc(q.val)||'(bỏ trống)'}</div>${q.ok?'':`<div>Đáp án: <b>${esc(correct)}</b></div>`}</div>`;
+  let inp;if(q.t=='mc')inp=q.opts.list.map((o,j)=>`<label class="opt"><input type="radio" name="q${i}" value="${j}"> ${esc(o)}</label>`).join('');
+  else if(q.t=='tf')inp=`<label class="opt"><input type="radio" name="q${i}" value="1"> Đúng</label><label class="opt"><input type="radio" name="q${i}" value="0"> Sai</label>`;
+  else inp=`<input id="w${i}" autocomplete="off" placeholder="${q.dir=='en'?'Gõ từ tiếng Anh...':'Gõ nghĩa tiếng Việt...'}" style="margin-top:10px">`;
+  return `<div class="card" style="margin-bottom:12px"><b class="sub">Câu ${i+1} · ${q.t=='mc'?'Trắc nghiệm':q.t=='tf'?'Đúng/Sai':'Tự luận'}</b>${body}${inp}</div>`}).join('');
+ return h+(ses.sub?`<button class="btn" onclick="go('test')">Làm bài mới</button>`:`<button class="btn" style="width:100%" onclick="submitTest()">Nộp bài</button>`)}
 
-            navigate(v, setId, folderId) {
-                this.view = v;
-                if (setId) this.activeSetId = setId;
-                if (folderId !== undefined) this.activeFolderId = folderId;
-                if (v === 'learn') {
-                    const set = this.sets.find(s => s.id === this.activeSetId);
-                    this.learnQueue = (set ? set.cards : []).map(c => ({
-                        ...c,
-                        direction: Math.random() > 0.5 ? 'en-to-vn' : 'vn-to-en'
-                    }));
-                    this.learnIndex = 0;
-                    this.learnAnswer = '';
-                    this.learnResult = null;
-                }
-                if (v === 'flashcards') {
-                    this.flashcardIndex = 0;
-                    this.flashcardFlipped = false;
-                }
-                if (v === 'games') {
-                    this.gameMode = 'menu';
-                }
-                renderApp();
-            },
+/* ---------- Game 1: Blast (canvas, requestAnimationFrame) ---------- */
+function vBlast(){const s=set();return `<button class="btn g" onclick="go('set')">← Quay lại</button><h2>🚀 Blast</h2>${s.cards.length<2?'<p class="sub">Cần ít nhất 2 thẻ để chơi.</p>':'<p class="sub">Chạm/bấm vào thiên thạch chứa nghĩa đúng của từ ở góc trên. 3 mạng.</p><canvas id="cv"></canvas>'}`}
+const IC={};const gi=u=>{if(!u)return null;if(!IC[u]){const i=new Image();i.src=u;IC[u]=i}const i=IC[u];return i.complete&&i.naturalWidth?i:null};
+function blast(){const cv=$('#cv'),x=cv.getContext('2d'),W=cv.width=640,H=cv.height=440,s=set();
+ let score=0,lives=3,ast=[],fx=[],cur,over=false,last=performance.now();const st=[...Array(60)].map(()=>[Math.random()*W,Math.random()*H,Math.random()*1.5+.4]);
+ const lab=c=>c.definition.split(/[,;]/)[0].trim();
+ function spawn(){cur=s.cards[Math.random()*s.cards.length|0];const items=shuf([cur,...shuf(s.cards.filter(c=>c!=cur)).slice(0,2)]),sp=45+Math.min(score,400)/5;
+  ast=items.map((c,i)=>({c,x:W/(items.length*2)*(2*i+1),y:-40-Math.random()*60,v:sp+Math.random()*12,ok:c==cur,r:50}))}
+ function boom(a,col){for(let i=0;i<22;i++){const t=Math.random()*6.28,v=60+Math.random()*160;fx.push({x:a.x,y:a.y,vx:Math.cos(t)*v,vy:Math.sin(t)*v,l:.7,col})}}
+ function wrap(t,px,py){const w=t.split(' '),L=[];let l='';w.forEach(k=>{if((l+' '+k).trim().length>13&&l){L.push(l);l=k}else l=(l+' '+k).trim()});L.push(l);L.slice(0,3).forEach((z,i,A)=>x.fillText(z,px,py+(i-(A.length-1)/2)*15))}
+ spawn();
+ cv.onpointerdown=e=>{if(over){cancelAnimationFrame(raf);blast();return}const r=cv.getBoundingClientRect(),px=(e.clientX-r.left)*W/r.width,py=(e.clientY-r.top)*H/r.height,a=ast.find(a=>Math.hypot(a.x-px,a.y-py)<a.r);if(!a)return;
+  if(a.ok){boom(a,'#34d399');score+=10;spawn()}else{boom(a,'#f43f5e');ast=ast.filter(z=>z!=a);if(--lives<=0)over=true}};
+ function tick(t){const dt=Math.min(.05,(t-last)/1000);last=t;x.fillStyle='#070620';x.fillRect(0,0,W,H);x.fillStyle='#fff8';st.forEach(p=>{p[1]=(p[1]+p[2]*20*dt)%H;x.fillRect(p[0],p[1],p[2],p[2])});
+  if(!over){ast.forEach(a=>a.y+=a.v*dt);const miss=ast.find(a=>a.ok&&a.y>H-30);if(miss){boom(miss,'#f59e0b');if(--lives<=0)over=true;else spawn()}}
+  ast.forEach(a=>{x.save();x.beginPath();x.arc(a.x,a.y,a.r,0,6.28);x.fillStyle='#2a2d6b';x.fill();x.clip();const im=gi(a.c.backImage);if(im){x.globalAlpha=.35;x.drawImage(im,a.x-a.r,a.y-a.r,a.r*2,a.r*2);x.globalAlpha=1}x.restore();x.beginPath();x.arc(a.x,a.y,a.r,0,6.28);x.strokeStyle='#818cf8';x.lineWidth=3;x.stroke();x.fillStyle='#fff';x.font='bold 13px Inter,sans-serif';x.textAlign='center';x.textBaseline='middle';wrap(lab(a.c),a.x,a.y)});
+  fx=fx.filter(p=>(p.l-=dt)>0);fx.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;x.globalAlpha=Math.max(0,p.l);x.fillStyle=p.col;x.fillRect(p.x,p.y,4,4)});x.globalAlpha=1;
+  x.textAlign='left';x.textBaseline='alphabetic';x.fillStyle='#fff';x.font='bold 22px Inter,sans-serif';x.fillText(head(cur),14,32);const fi=gi(cur.frontImage);if(fi)x.drawImage(fi,14,42,80,60);
+  x.textAlign='right';x.font='bold 16px Inter,sans-serif';x.fillText('Điểm '+score+'  '+'❤️'.repeat(Math.max(0,lives)),W-14,30);
+  if(over){x.fillStyle='#000b';x.fillRect(0,0,W,H);x.fillStyle='#fff';x.textAlign='center';x.font='bold 34px Inter,sans-serif';x.fillText('Game Over — '+score+' điểm',W/2,H/2-6);x.font='16px Inter,sans-serif';x.fillText('Chạm để chơi lại',W/2,H/2+30)}
+  raf=requestAnimationFrame(tick)}
+ raf=requestAnimationFrame(tick)}
 
-            renameFolder(folderId, event) {
-                event.stopPropagation();
-                const folder = this.folders.find(f => f.id === folderId);
-                if (!folder) return;
-                const newName = prompt('Nhập tên mới cho thư mục:', folder.name);
-                if (newName && newName.trim()) {
-                    folder.name = newName.trim();
-                    this.persist();
-                    renderApp();
-                }
-            },
+/* ---------- Game 2: Blocks 8x8 ---------- */
+const SH=[[[1]],[[1,1]],[[1],[1]],[[1,1,1]],[[1],[1],[1]],[[1,1],[1,1]],[[1,1,1,1]],[[1],[1],[1],[1]],[[1,1],[1,0]],[[1,1],[0,1]],[[1,0],[1,1]],[[0,1],[1,1]],[[1,1,1],[1,0,0]],[[1,1,1],[0,1,0]],[[1,1,1],[1,1,1],[1,1,1]]];
+const newTray=()=>[0,0,0].map(()=>SH[Math.random()*SH.length|0]);
+function blocksStart(){ses={g:Array(64).fill(0),tray:newTray(),sel:null,score:0,over:false,q:null}}
+const fits=(p,r,c)=>p.every((row,y)=>row.every((v,x)=>!v||(r+y<8&&c+x<8&&!ses.g[(r+y)*8+c+x])));
+const canPlace=p=>{for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(fits(p,r,c))return true;return false};
+function place(i){const b=ses;if(b.over||b.sel==null)return;const p=b.tray[b.sel],r=i>>3,c=i&7;if(!fits(p,r,c))return;let n=0;
+ p.forEach((row,y)=>row.forEach((v,x)=>{if(v){b.g[(r+y)*8+c+x]=1;n++}}));const rows=[],cols=[];
+ for(let k=0;k<8;k++){if([...Array(8)].every((_,j)=>b.g[k*8+j]))rows.push(k);if([...Array(8)].every((_,j)=>b.g[j*8+k]))cols.push(k)}
+ rows.forEach(k=>{for(let j=0;j<8;j++)b.g[k*8+j]=0});cols.forEach(k=>{for(let j=0;j<8;j++)b.g[j*8+k]=0});const L=rows.length+cols.length;b.score+=n+L*L*10;b.tray[b.sel]=null;b.sel=null;
+ if(b.tray.every(z=>!z)){const s=set();if(s.cards.length>=2){const cd=s.cards[Math.random()*s.cards.length|0];b.q={c:cd,opts:mcOpts(s,cd,'vi')}}else b.tray=newTray()}
+ else if(!b.tray.some(z=>z&&canPlace(z)))b.over=true;render()}
+function qa(i){const b=ses;if(i==b.q.opts.ci)b.score+=30;b.q=null;b.tray=newTray();if(!b.tray.some(canPlace))b.over=true;render()}
+function vBlocks(){const b=ses;let h=`<button class="btn g" onclick="go('set')">← Quay lại</button><h2>📦 Blocks 8x8 — Điểm: ${b.score}</h2>`;
+ if(b.q){const p=pr(b.q.c,'vi');return h+`<div class="card"><span class="sub">⭐ Câu hỏi thưởng +30 điểm</span><div class="big" style="margin:10px 0">${p.t}</div>${p.im}${b.q.opts.list.map((o,i)=>`<button class="opt" onclick="qa(${i})">${esc(o)}</button>`).join('')}</div>`}
+ if(b.over)h+=`<div class="card" style="text-align:center;margin-bottom:14px"><h3>Hết nước đi! Điểm: ${b.score}</h3><button class="btn" onclick="go('blocks')">Chơi lại</button></div>`;
+ return h+`<div class="bk-grid">${b.g.map((v,i)=>`<div class="cell ${v?'on':''}" onclick="place(${i})"></div>`).join('')}</div><div class="row" style="justify-content:center;margin-top:18px;gap:22px">${b.tray.map((p,i)=>p?`<div onclick="ses.sel=${i};render()" style="padding:8px;border-radius:12px;border:2px solid ${b.sel==i?'#6366f1':'transparent'};cursor:pointer"><div style="display:grid;grid-template-columns:repeat(${p[0].length},18px);gap:2px">${p.flat().map(v=>`<div style="width:18px;height:18px;border-radius:4px;background:${v?'#6366f1':'transparent'}"></div>`).join('')}</div></div>`:'<div style="width:60px"></div>').join('')}</div><p class="sub" style="text-align:center">Chọn khối rồi bấm ô để đặt (ô bấm là góc trên-trái). Dùng hết 3 khối sẽ có câu hỏi từ vựng thưởng điểm.</p>`}
 
-            deleteFolder(folderId, event) {
-                event.stopPropagation();
-                if (confirm('Bạn có chắc chắn muốn xoá thư mục này?')) {
-                    this.folders = this.folders.filter(f => f.id !== folderId);
-                    this.sets = this.sets.map(s => s.folderId === folderId ? { ...s, folderId: null } : s);
-                    if (this.activeFolderId === folderId) {
-                        this.view = 'home';
-                        this.activeFolderId = null;
-                    }
-                    this.persist();
-                    renderApp();
-                }
-            },
-
-            openNewFolderModal() {
-                const name = prompt('Nhập tên thư mục mới:');
-                if (name && name.trim()) {
-                    this.folders.push({ id: 'f-' + Date.now(), name: name.trim() });
-                    this.persist();
-                    renderApp();
-                }
-            },
-
-            openNewSetModal() {
-                const title = prompt('Nhập tiêu đề học phần mới:');
-                if (title && title.trim()) {
-                    const newSet = {
-                        id: 'set-' + Date.now(),
-                        title: title.trim(),
-                        description: 'Học phần mới tạo',
-                        folderId: this.activeFolderId || (this.folders[0] ? this.folders[0].id : null),
-                        cards: [
-                            { id: 'c-1', term: 'optional | (adj) | /ˈɒp.ʃən.əl/', definition: 'tự nguyện', frontImage: '', backImage: '' }
-                        ]
-                    };
-                    this.sets.unshift(newSet);
-                    this.persist();
-                    this.navigate('set-detail', newSet.id);
-                }
-            }
-        };
-
-        window.appState = appState;
-
-        function renderApp() {
-            const sidebarFoldersEl = document.getElementById('sidebar-folders');
-            if (sidebarFoldersEl) {
-                sidebarFoldersEl.innerHTML = appState.folders.map(f => `
-                    <div onclick="window.appState.navigate('folder-detail', null, '${f.id}')" 
-                         class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer group ${appState.activeFolderId === f.id && appState.view === 'folder-detail' ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800'}">
-                        <div class="flex items-center gap-2.5 truncate">
-                            <span>📁</span>
-                            <span class="truncate">${f.name}</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <button onclick="window.appState.renameFolder('${f.id}', event)" class="p-1 rounded hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 cursor-pointer text-xs" title="Đổi tên thư mục">✏️</button>
-                            <button onclick="window.appState.deleteFolder('${f.id}', event)" class="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 cursor-pointer text-xs" title="Xoá thư mục">🗑️</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            const mainEl = document.getElementById('main-content');
-            if (!mainEl) return;
-
-            if (appState.view === 'home') {
-                mainEl.innerHTML = `
-                    <div class="space-y-8 animate-fadeIn">
-                        <div class="space-y-4">
-                            <h2 class="text-xl font-extrabold text-white">Jump back in</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                ${appState.sets.map(set => `
-                                    <div class="rounded-3xl bg-[#131432] border border-slate-800 p-5 space-y-4 shadow-xl">
-                                        <div class="flex justify-between items-center">
-                                            <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold text-xs">${set.cards.length} thuật ngữ</span>
-                                        </div>
-                                        <h3 class="text-lg font-extrabold text-white">${set.title}</h3>
-                                        <p class="text-xs text-slate-400">${set.description}</p>
-                                        <button onclick="window.appState.navigate('set-detail', '${set.id}')" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs cursor-pointer">
-                                            Tiếp tục học
-                                        </button>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'folder-detail') {
-                const folder = appState.folders.find(f => f.id === appState.activeFolderId);
-                const folderSets = appState.sets.filter(s => s.folderId === appState.activeFolderId);
-                mainEl.innerHTML = `
-                    <div class="space-y-6 animate-fadeIn">
-                        <button onclick="window.appState.navigate('home')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại</button>
-                        <div class="flex items-center justify-between">
-                            <h1 class="text-3xl font-extrabold text-white">📁 ${folder ? folder.name : 'Thư mục'}</h1>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            ${folderSets.map(s => `
-                                <div onclick="window.appState.navigate('set-detail', '${s.id}')" class="p-5 rounded-3xl bg-[#131432] border border-slate-800 cursor-pointer hover:border-indigo-500">
-                                    <h3 class="font-extrabold text-lg text-white">${s.title}</h3>
-                                    <p class="text-xs text-slate-400 mt-1">${s.cards.length} thuật ngữ</p>
-                                </div>
-                            `).join('')}
-                            ${folderSets.length === 0 ? '<div class="text-slate-400 text-sm">Chưa có học phần nào trong thư mục này.</div>' : ''}
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'set-detail') {
-                const set = appState.sets.find(s => s.id === appState.activeSetId) || appState.sets[0];
-                mainEl.innerHTML = `
-                    <div class="space-y-8 animate-fadeIn">
-                        <button onclick="window.appState.navigate('home')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại</button>
-                        <div class="flex items-center justify-between">
-                            <h1 class="text-3xl font-extrabold text-white">${set.title}</h1>
-                        </div>
-                        <p class="text-sm text-slate-400">${set.cards.length} thuật ngữ trong học phần</p>
-                        
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            <button onclick="window.appState.navigate('flashcards')" class="p-6 rounded-3xl bg-indigo-600/20 border border-indigo-500/30 text-left space-y-2 cursor-pointer hover:border-indigo-500">
-                                <div class="text-lg font-black text-white">📚 Flashcards</div>
-                                <div class="text-xs text-slate-400">Lật thẻ 3D & Anki SRS</div>
-                            </button>
-                            <button onclick="window.appState.navigate('learn')" class="p-6 rounded-3xl bg-cyan-600/20 border border-cyan-500/30 text-left space-y-2 cursor-pointer hover:border-cyan-500">
-                                <div class="text-lg font-black text-white">✍️ Written AI</div>
-                                <div class="text-xs text-slate-400">Tự luận 2 chiều ngẫu nhiên</div>
-                            </button>
-                            <button onclick="window.appState.navigate('test')" class="p-6 rounded-3xl bg-emerald-600/20 border border-emerald-500/30 text-left space-y-2 cursor-pointer hover:border-emerald-500">
-                                <div class="text-lg font-black text-white">📝 Test</div>
-                                <div class="text-xs text-slate-400">Bài kiểm tra tổng hợp</div>
-                            </button>
-                            <button onclick="window.appState.navigate('games')" class="p-6 rounded-3xl bg-amber-600/20 border border-amber-500/30 text-left space-y-2 cursor-pointer hover:border-amber-500">
-                                <div class="text-lg font-black text-white">🎮 Games 60FPS</div>
-                                <div class="text-xs text-slate-400">Blast & Blocks arcade</div>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'flashcards') {
-                const set = appState.sets.find(s => s.id === appState.activeSetId);
-                const card = set.cards[appState.flashcardIndex];
-                mainEl.innerHTML = `
-                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
-                        <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
-                        <div class="text-xs text-slate-400 text-right">Thẻ ${appState.flashcardIndex + 1} / ${set.cards.length}</div>
-                        <div onclick="appState.flashcardFlipped = !appState.flashcardFlipped; renderApp();" class="p-10 rounded-3xl bg-[#131432] border border-indigo-500/40 text-center cursor-pointer min-h-[260px] flex flex-col justify-center space-y-4 shadow-2xl">
-                            <div class="text-xs font-bold text-indigo-300 uppercase">${appState.flashcardFlipped ? 'Mặt sau (Định nghĩa)' : 'Mặt trước (Thuật ngữ)'}</div>
-                            <div class="text-2xl font-black text-white">${appState.flashcardFlipped ? card.definition : card.term}</div>
-                            <div class="text-xs text-slate-400">Nhấn vào thẻ để lật</div>
-                        </div>
-                        <div class="grid grid-cols-4 gap-2">
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-rose-600/20 text-rose-300 font-bold text-xs cursor-pointer">1. Again</button>
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-amber-600/20 text-amber-300 font-bold text-xs cursor-pointer">2. Hard</button>
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-indigo-600/20 text-indigo-300 font-bold text-xs cursor-pointer">3. Good</button>
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-emerald-600/20 text-emerald-300 font-bold text-xs cursor-pointer">4. Easy</button>
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'learn') {
-                const q = appState.learnQueue[appState.learnIndex];
-                if (!q) {
-                    mainEl.innerHTML = `
-                        <div class="max-w-xl mx-auto text-center space-y-6 py-12">
-                            <h2 class="text-2xl font-black text-emerald-400">🎉 Hoàn thành phiên Written AI!</h2>
-                            <button onclick="window.appState.navigate('set-detail')" class="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Trở về học phần</button>
-                        </div>
-                    `;
-                    return;
-                }
-                const target = q.direction === 'en-to-vn' ? q.definition : q.term;
-                mainEl.innerHTML = `
-                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
-                        <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
-                        <div class="text-xs text-slate-400 text-right">Câu ${appState.learnIndex + 1} / ${appState.learnQueue.length} (${q.direction === 'en-to-vn' ? 'Viết nghĩa' : 'Viết từ'})</div>
-                        <div class="p-8 rounded-3xl bg-[#131432] border border-slate-800 space-y-6 shadow-2xl">
-                            <div class="space-y-2">
-                                <span class="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase">${q.direction === 'en-to-vn' ? 'Thuật ngữ gốc' : 'Ý nghĩa tiếng Việt'}</span>
-                                <div class="text-2xl font-black text-white">${q.direction === 'en-to-vn' ? q.term : q.definition}</div>
-                            </div>
-                            <div class="space-y-4">
-                                <input id="user-ans" type="text" value="${appState.learnAnswer}" oninput="window.appState.learnAnswer = this.value" placeholder="Nhập câu trả lời..." class="w-full px-4 py-3 rounded-xl bg-[#0a0b16] border border-slate-800 text-white text-sm" />
-                                ${!appState.learnResult ? `
-                                    <button onclick="
-                                        const val = document.getElementById('user-ans').value.trim().toLowerCase();
-                                        const cleanTarget = '${target}'.toLowerCase();
-                                        const correct = val.length > 0 && cleanTarget.includes(val);
-                                        window.appState.learnResult = correct ? 'Chính xác!' : 'Chưa đúng. Đáp án: ${target}';
-                                        renderApp();
-                                    " class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Kiểm tra</button>
-                                ` : `
-                                    <div class="p-3 rounded-xl bg-slate-800 text-sm font-bold">${appState.learnResult}</div>
-                                    <button onclick="window.appState.learnIndex++; window.appState.learnAnswer=''; window.appState.learnResult=null; renderApp();" class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Tiếp tục</button>
-                                `}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'test') {
-                const set = appState.sets.find(s => s.id === appState.activeSetId);
-                mainEl.innerHTML = `
-                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
-                        <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
-                        <h2 class="text-xl font-extrabold text-white">📝 Bài kiểm tra tổng hợp</h2>
-                        ${set.cards.map((c, i) => `
-                            <div class="p-5 rounded-3xl bg-[#131432] border border-slate-800 space-y-3">
-                                <div class="font-bold text-sm text-indigo-400">Câu #${i+1}</div>
-                                <div class="text-base font-extrabold text-white">Nghĩa: <span class="text-emerald-300">${c.definition}</span> là gì?</div>
-                                <input type="text" placeholder="Nhập từ vựng..." class="w-full px-4 py-2.5 rounded-xl bg-[#0a0b16] border border-slate-800 text-white text-sm" />
-                            </div>
-                        `).join('')}
-                        <button onclick="alert('Đã nộp bài kiểm tra thành công!')" class="w-full py-3.5 rounded-2xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Nộp bài</button>
-                    </div>
-                `;
-            } else if (appState.view === 'games') {
-                if (appState.gameMode === 'menu') {
-                    mainEl.innerHTML = `
-                        <div class="max-w-3xl mx-auto space-y-6 animate-fadeIn">
-                            <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
-                            <h2 class="text-2xl font-black text-white">🎮 Trò chơi Arcade 60FPS</h2>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <button onclick="window.appState.gameMode = 'blast'; renderApp();" class="p-8 rounded-3xl bg-indigo-600/20 border border-indigo-500/40 hover:border-indigo-500 text-left space-y-3 cursor-pointer shadow-xl">
-                                    <div class="text-xl font-black text-white">🚀 Blast (Bắn thiên thạch)</div>
-                                    <p class="text-xs text-slate-300">Bắn hạ thiên thạch chứa nghĩa đúng 60FPS mượt mà.</p>
-                                </button>
-                                <button onclick="window.appState.gameMode = 'blocks'; renderApp();" class="p-8 rounded-3xl bg-emerald-600/20 border border-emerald-500/40 hover:border-emerald-500 text-left space-y-3 cursor-pointer shadow-xl">
-                                    <div class="text-xl font-black text-white">📦 Blocks (Xếp gạch 8x8)</div>
-                                    <p class="text-xs text-slate-300">Xếp gạch trí tuệ kết hợp từ vựng.</p>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                } else if (appState.gameMode === 'blast') {
-                    mainEl.innerHTML = `
-                        <div class="max-w-xl mx-auto rounded-3xl bg-slate-900 border border-indigo-500/40 p-8 space-y-6 text-center shadow-2xl animate-fadeIn">
-                            <button onclick="window.appState.gameMode = 'menu'; renderApp();" class="text-xs font-bold text-indigo-400 cursor-pointer">← Chọn game khác</button>
-                            <h3 class="text-xl font-black text-white">🚀 Blast Arcade</h3>
-                            <p class="text-sm text-slate-300">Trò chơi phản xạ từ vựng tốc độ cao đã sẵn sàng!</p>
-                            <button onclick="window.appState.gameMode = 'menu'; renderApp();" class="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Quay lại</button>
-                        </div>
-                    `;
-                } else if (appState.gameMode === 'blocks') {
-                    mainEl.innerHTML = `
-                        <div class="max-w-xl mx-auto rounded-3xl bg-slate-900 border border-emerald-500/40 p-8 space-y-6 text-center shadow-2xl animate-fadeIn">
-                            <button onclick="window.appState.gameMode = 'menu'; renderApp();" class="text-xs font-bold text-indigo-400 cursor-pointer">← Chọn game khác</button>
-                            <h3 class="text-xl font-black text-white">📦 Blocks 8x8</h3>
-                            <p class="text-sm text-slate-300">Bảng xếp gạch trí tuệ đã sẵn sàng!</p>
-                            <button onclick="window.appState.gameMode = 'menu'; renderApp();" class="px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm cursor-pointer">Quay lại</button>
-                        </div>
-                    `;
-                }
-            }
-        }
-
-        renderApp();
-    </script>
+/* ---------- Sao lưu & phím tắt ---------- */
+function exportData(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='trungs-quizlet-backup.json';a.click()}
+function importData(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);if(!j.sets)throw 0;localStorage.setItem(KEY,JSON.stringify(j));D=load();go('home')}catch(e){alert('Tệp sao lưu không hợp lệ')}};r.readAsText(f)}
+document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const v=S.view;
+ if(v=='flash'&&ses&&ses.q&&ses.q.length){if(e.key==' '){e.preventDefault();flipC($('.flip3'))}else if(ses.flip&&'1234'.includes(e.key))rate(+e.key-1)}
+ else if((v=='learn'||v=='written')&&ses&&ses.res&&e.key=='Enter')nextQ()});
+render();
+</script>
 </body>
 </html>
