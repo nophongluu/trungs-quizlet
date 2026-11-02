@@ -4,44 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trung's Quizlet - Ứng dụng Học Tập Thông Minh</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        darkBg: '#0a092d',
-                        cardBg: '#131432'
-                    }
+                    colors: { darkBg: '#0a092d', cardBg: '#131432' }
                 }
             }
         }
     </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0a092d; color: #f8fafc; }
-    </style>
+    <style>body { font-family: 'Inter', sans-serif; background-color: #0a092d; color: #f8fafc; }</style>
 </head>
 <body class="min-h-screen antialiased selection:bg-indigo-500 selection:text-white">
     <div id="app" class="flex flex-col min-h-screen">
         <!-- Header -->
         <header class="sticky top-0 z-40 bg-[#131432]/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="appState.navigate('home')">
-                <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 font-bold">
-                    🧠
-                </div>
-                <span class="font-black text-lg bg-gradient-to-r from-indigo-400 via-cyan-300 to-indigo-200 bg-clip-text text-transparent">
-                    Trung's Quizlet
-                </span>
+            <div class="flex items-center gap-3 cursor-pointer" onclick="window.appState.navigate('home')">
+                <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center text-white shadow-lg font-bold">🧠</div>
+                <span class="font-black text-lg bg-gradient-to-r from-indigo-400 via-cyan-300 to-indigo-200 bg-clip-text text-transparent">Trung's Quizlet</span>
             </div>
-
             <div class="flex items-center gap-3">
-                <button onclick="appState.openNewSetModal()" class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 cursor-pointer">
-                    <span>+ Tạo học phần</span>
+                <button onclick="window.appState.openNewSetModal()" class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm cursor-pointer shadow-lg shadow-indigo-600/30">
+                    + Tạo học phần
                 </button>
             </div>
         </header>
@@ -50,38 +37,35 @@
         <div class="flex flex-1">
             <!-- Sidebar -->
             <aside class="w-64 min-h-[calc(100vh-65px)] bg-[#131432] border-r border-slate-800 p-4 hidden md:block space-y-6">
-                <button onclick="appState.navigate('home')" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl font-bold text-sm cursor-pointer bg-indigo-600 text-white shadow-lg">
-                    <span>🏠 Trang chủ</span>
+                <button onclick="window.appState.navigate('home')" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl font-bold text-sm cursor-pointer bg-indigo-600 text-white shadow-lg">
+                    🏠 Trang chủ
                 </button>
-
                 <div class="space-y-2 pt-2 border-t border-slate-800">
                     <div class="flex items-center justify-between px-3 text-xs font-extrabold uppercase text-slate-400">
                         <span>Your Folders</span>
-                        <button onclick="appState.openNewFolderModal()" class="text-indigo-400 font-bold text-xs cursor-pointer hover:underline">+ New</button>
+                        <button onclick="window.appState.openNewFolderModal()" class="text-indigo-400 font-bold text-xs cursor-pointer hover:underline">+ New</button>
                     </div>
-
-                    <div id="sidebar-folders" class="space-y-1">
-                        <!-- Folders rendered dynamically -->
-                    </div>
+                    <div id="sidebar-folders" class="space-y-1"></div>
                 </div>
             </aside>
 
             <!-- Main Dynamic Container -->
-            <main id="main-content" class="flex-1 p-4 sm:p-8 max-w-7xl mx-auto space-y-8">
-                <!-- Rendered by renderApp() -->
-            </main>
+            <main id="main-content" class="flex-1 p-4 sm:p-8 max-w-7xl mx-auto space-y-8"></main>
         </div>
     </div>
 
-    <!-- Modal Container -->
-    <div id="modal-root"></div>
-
     <script>
-        // --- APP STATE & STORAGE ---
+        // --- DATA & STATE ---
         const appState = {
-            view: 'home', // home, folder-detail, set-detail, flashcards, learn, editor
+            view: 'home',
             activeSetId: 'set-vol',
             activeFolderId: null,
+            flashcardIndex: 0,
+            flashcardFlipped: false,
+            learnIndex: 0,
+            learnQueue: [],
+            learnAnswer: '',
+            learnResult: null,
             folders: [
                 { id: 'f-sr', name: 'SR - Ielts' },
                 { id: 'f-cn', name: 'Tiếng Trung' },
@@ -94,31 +78,42 @@
                     description: 'Bộ từ vựng tình nguyện và hoạt động cộng đồng',
                     folderId: 'f-sr',
                     cards: [
-                        {
-                            id: 'c1',
-                            term: 'optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen | Example: Attendance is optional | Synonyms: voluntary, elective',
-                            definition: 'tự nguyện, không bắt buộc, tuỳ chọn',
-                            frontImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=80',
-                            backImage: '',
-                            mastery: 2
-                        },
-                        {
-                            id: 'c2',
-                            term: 'speciality | (n) | /,speʃ.iˈæl.ə.ti/ | English definition: a product or service a region is famous for | Example: Authentic beef pho.',
-                            definition: 'món đặc sản, nét đặc trưng chuyên biệt',
-                            frontImage: '',
-                            backImage: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&auto=format&fit=crop&q=80',
-                            mastery: 1
-                        }
+                        { id: 'c1', term: 'optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen | Example: Attendance is optional', definition: 'tự nguyện, không bắt buộc, tuỳ chọn', frontImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=80', backImage: '' },
+                        { id: 'c2', term: 'speciality | (n) | /,speʃ.iˈæl.ə.ti/ | English definition: a product or service a region is famous for', definition: 'món đặc sản, nét đặc trưng chuyên biệt', frontImage: '', backImage: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&auto=format&fit=crop&q=80' }
                     ]
                 }
             ],
-            
+
             navigate(v, setId, folderId) {
                 this.view = v;
                 if (setId) this.activeSetId = setId;
                 if (folderId !== undefined) this.activeFolderId = folderId;
+                if (v === 'learn') {
+                    const set = this.sets.find(s => s.id === this.activeSetId);
+                    this.learnQueue = (set ? set.cards : []).map(c => ({
+                        ...c,
+                        direction: Math.random() > 0.5 ? 'en-to-vn' : 'vn-to-en'
+                    }));
+                    this.learnIndex = 0;
+                    this.learnAnswer = '';
+                    this.learnResult = null;
+                }
+                if (v === 'flashcards') {
+                    this.flashcardIndex = 0;
+                    this.flashcardFlipped = false;
+                }
                 renderApp();
+            },
+
+            renameFolder(folderId, event) {
+                event.stopPropagation();
+                const folder = this.folders.find(f => f.id === folderId);
+                if (!folder) return;
+                const newName = prompt('Nhập tên mới cho thư mục:', folder.name);
+                if (newName && newName.trim()) {
+                    folder.name = newName.trim();
+                    renderApp();
+                }
             },
 
             deleteFolder(folderId, event) {
@@ -151,7 +146,7 @@
                         description: 'Học phần mới tạo',
                         folderId: this.activeFolderId || (this.folders[0] ? this.folders[0].id : null),
                         cards: [
-                            { id: 'c-1', term: 'Hello', definition: 'Xin chào', frontImage: '', backImage: '', mastery: 0 }
+                            { id: 'c-1', term: 'optional | (adj) | /ˈɒp.ʃən.əl/', definition: 'tự nguyện', frontImage: '', backImage: '' }
                         ]
                     };
                     this.sets.unshift(newSet);
@@ -160,26 +155,27 @@
             }
         };
 
-        // --- RENDER ROUTER ---
+        window.appState = appState;
+
+        // --- RENDER APP ---
         function renderApp() {
-            // Render Sidebar Folders
             const sidebarFoldersEl = document.getElementById('sidebar-folders');
             if (sidebarFoldersEl) {
                 sidebarFoldersEl.innerHTML = appState.folders.map(f => `
-                    <div onclick="appState.navigate('folder-detail', null, '${f.id}')" 
+                    <div onclick="window.appState.navigate('folder-detail', null, '${f.id}')" 
                          class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer group ${appState.activeFolderId === f.id && appState.view === 'folder-detail' ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800'}">
                         <div class="flex items-center gap-2.5 truncate">
                             <span>📁</span>
                             <span class="truncate">${f.name}</span>
                         </div>
-                        <button onclick="appState.deleteFolder('${f.id}', event)" class="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 cursor-pointer" title="Xoá thư mục">
-                            🗑️
-                        </button>
+                        <div class="flex items-center gap-1">
+                            <button onclick="window.appState.renameFolder('${f.id}', event)" class="p-1 rounded hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 cursor-pointer text-xs" title="Đổi tên thư mục">✏️</button>
+                            <button onclick="window.appState.deleteFolder('${f.id}', event)" class="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 cursor-pointer text-xs" title="Xoá thư mục">🗑️</button>
+                        </div>
                     </div>
                 `).join('');
             }
 
-            // Render Main Content
             const mainEl = document.getElementById('main-content');
             if (!mainEl) return;
 
@@ -196,7 +192,7 @@
                                         </div>
                                         <h3 class="text-lg font-extrabold text-white">${set.title}</h3>
                                         <p class="text-xs text-slate-400">${set.description}</p>
-                                        <button onclick="appState.navigate('set-detail', '${set.id}')" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs cursor-pointer">
+                                        <button onclick="window.appState.navigate('set-detail', '${set.id}')" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs cursor-pointer">
                                             Tiếp tục học
                                         </button>
                                     </div>
@@ -205,57 +201,18 @@
                         </div>
                     </div>
                 `;
-            } else if (appState.view === 'set-detail') {
-                const set = appState.sets.find(s => s.id === appState.activeSetId) || appState.sets[0];
-                mainEl.innerHTML = `
-                    <div class="space-y-8 animate-fadeIn">
-                        <button onclick="appState.navigate('home')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại</button>
-                        <h1 class="text-3xl font-extrabold text-white">${set.title}</h1>
-                        <p class="text-sm text-slate-400">${set.cards.length} thuật ngữ trong học phần</p>
-                        
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                            <button onclick="alert('Chế độ Flashcards chuẩn bị sẵn sàng!')" class="p-6 rounded-3xl bg-indigo-600/20 border border-indigo-500/30 text-left space-y-2 cursor-pointer hover:border-indigo-500">
-                                <div class="text-xl font-black text-white">📚 Flashcards</div>
-                                <div class="text-xs text-slate-400">Lật thẻ 3D & Anki SRS</div>
-                            </button>
-                            <button onclick="alert('Chế độ Written AI chuẩn bị sẵn sàng!')" class="p-6 rounded-3xl bg-cyan-600/20 border border-cyan-500/30 text-left space-y-2 cursor-pointer hover:border-cyan-500">
-                                <div class="text-xl font-black text-white">✍️ Written AI</div>
-                                <div class="text-xs text-slate-400">Tự luận 2 chiều ngẫu nhiên</div>
-                            </button>
-                            <button onclick="alert('Trò chơi 60FPS chuẩn bị sẵn sàng!')" class="p-6 rounded-3xl bg-amber-600/20 border border-amber-500/30 text-left space-y-2 cursor-pointer hover:border-indigo-500">
-                                <div class="text-xl font-black text-white">🎮 Games 60FPS</div>
-                                <div class="text-xs text-slate-400">Blast & Blocks arcade</div>
-                            </button>
-                        </div>
-
-                        <div class="space-y-3 pt-4">
-                            <h3 class="text-lg font-extrabold text-white">Danh sách từ vựng</h3>
-                            ${set.cards.map((c, i) => `
-                                <div class="p-5 rounded-3xl bg-[#131432] border border-slate-800 flex flex-col sm:flex-row justify-between gap-4">
-                                    <div class="space-y-1">
-                                        <div class="text-xs font-bold text-indigo-400">#${i+1}</div>
-                                        <div class="text-lg font-extrabold text-white">${c.term}</div>
-                                        ${c.frontImage ? `<img src="${c.frontImage}" class="w-24 h-16 object-cover rounded-xl mt-2" />` : ''}
-                                    </div>
-                                    <div class="border-t sm:border-t-0 sm:border-l border-slate-800 pt-3 sm:pt-0 sm:pl-4">
-                                        <div class="text-base font-bold text-emerald-300">${c.definition}</div>
-                                        ${c.backImage ? `<img src="${c.backImage}" class="w-24 h-16 object-cover rounded-xl mt-2" />` : ''}
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
             } else if (appState.view === 'folder-detail') {
                 const folder = appState.folders.find(f => f.id === appState.activeFolderId);
                 const folderSets = appState.sets.filter(s => s.folderId === appState.activeFolderId);
                 mainEl.innerHTML = `
                     <div class="space-y-6 animate-fadeIn">
-                        <button onclick="appState.navigate('home')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại</button>
-                        <h1 class="text-3xl font-extrabold text-white">📁 ${folder ? folder.name : 'Thư mục'}</h1>
+                        <button onclick="window.appState.navigate('home')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại</button>
+                        <div class="flex items-center justify-between">
+                            <h1 class="text-3xl font-extrabold text-white">📁 ${folder ? folder.name : 'Thư mục'}</h1>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             ${folderSets.map(s => `
-                                <div onclick="appState.navigate('set-detail', '${s.id}')" class="p-5 rounded-3xl bg-[#131432] border border-slate-800 cursor-pointer hover:border-indigo-500">
+                                <div onclick="window.appState.navigate('set-detail', '${s.id}')" class="p-5 rounded-3xl bg-[#131432] border border-slate-800 cursor-pointer hover:border-indigo-500">
                                     <h3 class="font-extrabold text-lg text-white">${s.title}</h3>
                                     <p class="text-xs text-slate-400 mt-1">${s.cards.length} thuật ngữ</p>
                                 </div>
@@ -264,10 +221,121 @@
                         </div>
                     </div>
                 `;
+            } else if (appState.view === 'set-detail') {
+                const set = appState.sets.find(s => s.id === appState.activeSetId) || appState.sets[0];
+                mainEl.innerHTML = `
+                    <div class="space-y-8 animate-fadeIn">
+                        <button onclick="window.appState.navigate('home')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại</button>
+                        <div class="flex items-center justify-between">
+                            <h1 class="text-3xl font-extrabold text-white">${set.title}</h1>
+                        </div>
+                        <p class="text-sm text-slate-400">${set.cards.length} thuật ngữ trong học phần</p>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <button onclick="window.appState.navigate('flashcards')" class="p-6 rounded-3xl bg-indigo-600/20 border border-indigo-500/30 text-left space-y-2 cursor-pointer hover:border-indigo-500">
+                                <div class="text-lg font-black text-white">📚 Flashcards</div>
+                                <div class="text-xs text-slate-400">Lật thẻ 3D & Anki SRS</div>
+                            </button>
+                            <button onclick="window.appState.navigate('learn')" class="p-6 rounded-3xl bg-cyan-600/20 border border-cyan-500/30 text-left space-y-2 cursor-pointer hover:border-cyan-500">
+                                <div class="text-lg font-black text-white">✍️ Written AI</div>
+                                <div class="text-xs text-slate-400">Tự luận 2 chiều ngẫu nhiên</div>
+                            </button>
+                            <button onclick="window.appState.navigate('test')" class="p-6 rounded-3xl bg-emerald-600/20 border border-emerald-500/30 text-left space-y-2 cursor-pointer hover:border-emerald-500">
+                                <div class="text-lg font-black text-white">📝 Test</div>
+                                <div class="text-xs text-slate-400">Bài kiểm tra tổng hợp</div>
+                            </button>
+                            <button onclick="window.appState.navigate('games')" class="p-6 rounded-3xl bg-amber-600/20 border border-amber-500/30 text-left space-y-2 cursor-pointer hover:border-amber-500">
+                                <div class="text-lg font-black text-white">🎮 Games 60FPS</div>
+                                <div class="text-xs text-slate-400">Blast & Blocks arcade</div>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (appState.view === 'flashcards') {
+                const set = appState.sets.find(s => s.id === appState.activeSetId);
+                const card = set.cards[appState.flashcardIndex];
+                mainEl.innerHTML = `
+                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
+                        <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
+                        <div class="text-xs text-slate-400 text-right">Thẻ ${appState.flashcardIndex + 1} / ${set.cards.length}</div>
+                        <div onclick="appState.flashcardFlipped = !appState.flashcardFlipped; renderApp();" class="p-10 rounded-3xl bg-[#131432] border border-indigo-500/40 text-center cursor-pointer min-h-[260px] flex flex-col justify-center space-y-4 shadow-2xl">
+                            <div class="text-xs font-bold text-indigo-300 uppercase">${appState.flashcardFlipped ? 'Mặt sau (Định nghĩa)' : 'Mặt trước (Thuật ngữ)'}</div>
+                            <div class="text-2xl font-black text-white">${appState.flashcardFlipped ? card.definition : card.term}</div>
+                            <div class="text-xs text-slate-400">Nhấn vào thẻ để lật</div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-rose-600/20 text-rose-300 font-bold text-xs">1. Again</button>
+                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-amber-600/20 text-amber-300 font-bold text-xs">2. Hard</button>
+                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-indigo-600/20 text-indigo-300 font-bold text-xs">3. Good</button>
+                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-emerald-600/20 text-emerald-300 font-bold text-xs">4. Easy</button>
+                        </div>
+                    </div>
+                `;
+            } else if (appState.view === 'learn') {
+                const q = appState.learnQueue[appState.learnIndex];
+                if (!q) {
+                    mainEl.innerHTML = `
+                        <div class="max-w-xl mx-auto text-center space-y-6 py-12">
+                            <h2 class="text-2xl font-black text-emerald-400">🎉 Hoàn thành phiên Written AI!</h2>
+                            <button onclick="window.appState.navigate('set-detail')" class="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Trở về học phần</button>
+                        </div>
+                    `;
+                    return;
+                }
+                const target = q.direction === 'en-to-vn' ? q.definition : q.term;
+                mainEl.innerHTML = `
+                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
+                        <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
+                        <div class="text-xs text-slate-400 text-right">Câu ${appState.learnIndex + 1} / ${appState.learnQueue.length}</div>
+                        <div class="p-8 rounded-3xl bg-[#131432] border border-slate-800 space-y-6 shadow-2xl">
+                            <div class="space-y-2">
+                                <span class="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase">${q.direction === 'en-to-vn' ? 'Thuật ngữ gốc' : 'Ý nghĩa tiếng Việt'}</span>
+                                <div class="text-2xl font-black text-white">${q.direction === 'en-to-vn' ? q.term : q.definition}</div>
+                            </div>
+                            <div class="space-y-4">
+                                <input id="user-ans" type="text" value="${appState.learnAnswer}" oninput="window.appState.learnAnswer = this.value" placeholder="Nhập câu trả lời..." class="w-full px-4 py-3 rounded-xl bg-[#0a0b16] border border-slate-800 text-white text-sm" />
+                                ${!appState.learnResult ? `
+                                    <button onclick="
+                                        const val = document.getElementById('user-ans').value.trim().toLowerCase();
+                                        const cleanTarget = '${target}'.toLowerCase();
+                                        const correct = val.length > 0 && cleanTarget.includes(val);
+                                        window.appState.learnResult = correct ? 'Chính xác!' : 'Chưa đúng. Đáp án: ${target}';
+                                        renderApp();
+                                    " class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Kiểm tra</button>
+                                ` : `
+                                    <div class="p-3 rounded-xl bg-slate-800 text-sm font-bold">${appState.learnResult}</div>
+                                    <button onclick="window.appState.learnIndex++; window.appState.learnAnswer=''; window.appState.learnResult=null; renderApp();" class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Tiếp tục</button>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (appState.view === 'test') {
+                const set = appState.sets.find(s => s.id === appState.activeSetId);
+                mainEl.innerHTML = `
+                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
+                        <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
+                        <h2 class="text-xl font-extrabold text-white">📝 Bài kiểm tra tổng hợp</h2>
+                        ${set.cards.map((c, i) => `
+                            <div class="p-5 rounded-3xl bg-[#131432] border border-slate-800 space-y-3">
+                                <div class="font-bold text-sm text-indigo-400">Câu #${i+1}</div>
+                                <div class="text-base font-extrabold text-white">Nghĩa: <span class="text-emerald-300">${c.definition}</span> là gì?</div>
+                                <input type="text" placeholder="Nhập từ vựng..." class="w-full px-4 py-2.5 rounded-xl bg-[#0a0b16] border border-slate-800 text-white text-sm" />
+                            </div>
+                        `).join('')}
+                        <button onclick="alert('Đã nộp bài kiểm tra thành công!')" class="w-full py-3.5 rounded-2xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Nộp bài</button>
+                    </div>
+                `;
+            } else if (appState.view === 'games') {
+                mainEl.innerHTML = `
+                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn text-center py-12">
+                        <h2 class="text-2xl font-black text-white">🎮 Trò chơi Arcade 60FPS</h2>
+                        <button onclick="window.appState.navigate('set-detail')" class="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Quay lại</button>
+                    </div>
+                `;
             }
         }
 
-        // Initial render
         renderApp();
     </script>
 </body>
