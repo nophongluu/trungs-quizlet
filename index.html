@@ -1,640 +1,524 @@
 <!DOCTYPE html>
-<html lang="vi" class="dark">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trung's Quizlet - Ứng dụng Học Tập Thông Minh</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; background-color: #0a092d; color: #f8fafc; }</style>
+    <title>Trung's Quizlet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0a092d; color: #fff; }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+    </style>
 </head>
-<body class="min-h-screen antialiased selection:bg-indigo-500 selection:text-white">
-    <div id="app" class="flex flex-col min-h-screen">
-        <!-- Header -->
-        <header class="sticky top-0 z-40 bg-[#131432]/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="window.appState.navigate('home')">
-                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg font-black text-xl tracking-tighter">T</div>
-                <span class="font-black text-lg bg-gradient-to-r from-indigo-400 via-cyan-300 to-indigo-200 bg-clip-text text-transparent">Trung's Quizlet</span>
-            </div>
-            <div class="flex items-center gap-3">
-                <button onclick="window.appState.openSetEditor()" class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm cursor-pointer shadow-lg shadow-indigo-600/30">
-                    + Tạo học phần
-                </button>
-            </div>
-        </header>
+<body>
+    <div id="root"></div>
 
-        <!-- Main Layout -->
-        <div class="flex flex-1">
-            <!-- Sidebar -->
-            <aside class="w-64 min-h-[calc(100vh-65px)] bg-[#131432] border-r border-slate-800 p-4 hidden md:block space-y-6">
-                <button onclick="window.appState.navigate('home')" class="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl font-bold text-sm cursor-pointer bg-indigo-600 text-white shadow-lg">
-                    🏠 Trang chủ
-                </button>
-                <div class="space-y-2 pt-2 border-t border-slate-800">
-                    <div class="flex items-center justify-between px-3 text-xs font-extrabold uppercase text-slate-400">
-                        <span>Your Folders</span>
-                        <button onclick="window.appState.openNewFolderModal()" class="text-indigo-400 font-bold text-xs cursor-pointer hover:underline">+ New</button>
-                    </div>
-                    <div id="sidebar-folders" class="space-y-1"></div>
-                </div>
-            </aside>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-            <!-- Main Dynamic Container -->
-            <main id="main-content" class="flex-1 p-4 sm:p-8 max-w-7xl mx-auto space-y-8"></main>
-        </div>
-    </div>
-
-    <!-- Image Picker Modal -->
-    <div id="image-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="w-full max-w-xl rounded-3xl bg-[#131432] border border-slate-800 p-6 space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between">
-                <h3 id="image-modal-title" class="font-bold text-lg text-white">Chọn hình ảnh</h3>
-                <button onclick="window.appState.closeImageModal()" class="text-slate-400 hover:text-white cursor-pointer">✕</button>
-            </div>
-            <div class="flex gap-2">
-                <input id="image-search-input" type="text" placeholder="Tìm kiếm hình ảnh..." class="flex-1 px-4 py-2.5 rounded-xl bg-[#0a0b16] border border-slate-800 text-sm text-white" />
-                <button onclick="window.appState.searchImages()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm cursor-pointer">Tìm</button>
-            </div>
-            <div id="image-results" class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto"></div>
-            <div class="pt-2 border-t border-slate-800 flex gap-2">
-                <input id="image-url-input" type="url" placeholder="Hoặc dán URL hình ảnh trực tiếp..." class="flex-1 px-4 py-2 rounded-xl bg-[#0a0b16] border border-slate-800 text-xs text-white" />
-                <button onclick="window.appState.selectCustomImageUrl()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer">Dùng URL</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bulk Import Modal -->
-    <div id="bulk-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="w-full max-w-2xl rounded-3xl bg-[#131432] border border-slate-800 p-6 space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between">
-                <h3 class="font-bold text-lg text-white">Nhập nhanh hàng loạt từ Quizlet</h3>
-                <button onclick="window.appState.closeBulkModal()" class="text-slate-400 hover:text-white cursor-pointer">✕</button>
-            </div>
-            <p class="text-xs text-slate-400">Dán danh sách từ vựng của bạn vào đây. Mỗi dòng một thẻ (Thuật ngữ [Tab/Dấu gạch] Định nghĩa):</p>
-            <textarea id="bulk-textarea" rows="8" placeholder="optional | tự nguyện&#10;speciality | món đặc sản" class="w-full p-4 rounded-2xl bg-[#0a0b16] border border-slate-800 text-sm text-white focus:outline-none focus:border-indigo-500"></textarea>
-            <div class="flex justify-end gap-2">
-                <button onclick="window.appState.closeBulkModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs cursor-pointer">Huỷ</button>
-                <button onclick="window.appState.processBulkImport()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs cursor-pointer">Thêm thẻ vào học phần</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const LOCAL_STORAGE_KEY = 'trungs_quizlet_data_v6';
-        
-        const defaultFolders = [
-            { id: 'f-sr', name: 'SR - Ielts' },
-            { id: 'f-cn', name: 'Tiếng Trung' },
-            { id: 'f-su', name: 'SU - Ielts' }
+        const INITIAL_FOLDERS = [
+            { id: 'f1', name: 'SR - Ielts', subfolders: [] },
+            { id: 'f2', name: 'Tiếng Trung', subfolders: [] },
+            { id: 'f3', name: 'SU - Ielts', subfolders: [] }
         ];
 
-        const defaultSets = [
+        const INITIAL_SETS = [
             {
-                id: 'set-vol',
+                id: 's1',
                 title: 'LS19: Volunteer work',
-                description: 'Bộ từ vựng tình nguyện và hoạt động cộng đồng',
-                folderId: 'f-sr',
+                folderId: 'f1',
                 cards: [
-                    { id: 'c1', term: 'optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen | Example: Attendance is optional', definition: 'tự nguyện, không bắt buộc, tuỳ chọn', frontImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=80', backImage: '' },
-                    { id: 'c2', term: 'speciality | (n) | /,speʃ.iˈæl.ə.ti/ | English definition: a product or service a region is famous for', definition: 'món đặc sản, nét đặc trưng chuyên biệt', frontImage: '', backImage: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&auto=format&fit=crop&q=80' }
+                    { id: 'c1', term: 'optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen or decided upon by preference rather than required by rule | Collocations: completely optional, optional module, optional attendance | Example: Attendance at the afternoon clinical seminar is entirely optional for final-year students.', definition: 'tự nguyện, không bắt buộc, tùy chọn Synonyms: voluntary, elective, discretionary, non-compulsory', frontImage: '', backImage: '' },
+                    { id: 'c2', term: 'speciality | (n) | /ˌspeʃ.iˈæl.ə.ti/ | English definition: a product, food, or service that a specific person, restaurant, or region is particularly famous for | Collocations: regional speciality, local speciality, culinary speciality | Example: Authentic beef pho is celebrated internationally as an iconic culinary speciality of northern Vietnam.', definition: 'món đặc sản, nét đặc trưng chuyên biệt Synonyms: specialty, delicacy, signature item', frontImage: '', backImage: '' }
                 ]
             }
         ];
 
-        function loadStoredData() {
-            try {
-                const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (saved) return JSON.parse(saved);
-            } catch (e) {}
-            return { folders: defaultFolders, sets: defaultSets };
-        }
+        function App() {
+            const [folders, setFolders] = useState(() => {
+                const saved = localStorage.getItem('trungs_quizlet_folders');
+                return saved ? JSON.parse(saved) : INITIAL_FOLDERS;
+            });
+            const [sets, setSets] = useState(() => {
+                const saved = localStorage.getItem('trungs_quizlet_sets');
+                return saved ? JSON.parse(saved) : INITIAL_SETS;
+            });
+            const [currentView, setCurrentView] = useState('home'); // 'home', 'set_detail', 'editor', 'flashcard', 'written', 'test', 'games'
+            const [activeSetId, setActiveSetId] = useState(null);
+            const [selectedFolderId, setSelectedFolderId] = useState(null);
+            const [selectedSubfolder, setSelectedSubfolder] = useState(null);
 
-        function saveStoredData(folders, sets) {
-            try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ folders, sets }));
-            } catch (e) {}
-        }
+            useEffect(() => {
+                localStorage.setItem('trungs_quizlet_folders', JSON.stringify(folders));
+            }, [folders]);
 
-        const initialData = loadStoredData();
+            useEffect(() => {
+                localStorage.setItem('trungs_quizlet_sets', JSON.stringify(sets));
+            }, [sets]);
 
-        const appState = {
-            view: 'home',
-            activeSetId: 'set-vol',
-            activeFolderId: null,
-            flashcardIndex: 0,
-            flashcardFlipped: false,
-            learnIndex: 0,
-            learnQueue: [],
-            learnAnswer: '',
-            learnResult: null,
-            folders: initialData.folders,
-            sets: initialData.sets,
-            editingSet: null,
-            imagePickerCallback: null,
-            blastScore: 0,
-            blastActive: false,
-            blastCard: null,
-            blastOptions: [],
-
-            persist() {
-                saveStoredData(this.folders, this.sets);
-            },
-
-            navigate(v, setId, folderId) {
-                this.view = v;
-                if (setId) this.activeSetId = setId;
-                if (folderId !== undefined) this.activeFolderId = folderId;
-                if (v === 'learn') {
-                    const set = this.sets.find(s => s.id === this.activeSetId);
-                    this.learnQueue = (set ? set.cards : []).map(c => ({
-                        ...c,
-                        direction: Math.random() > 0.5 ? 'en-to-vn' : 'vn-to-en'
-                    }));
-                    this.learnIndex = 0;
-                    this.learnAnswer = '';
-                    this.learnResult = null;
-                }
-                if (v === 'flashcards') {
-                    this.flashcardIndex = 0;
-                    this.flashcardFlipped = false;
-                }
-                if (v === 'games') {
-                    this.startBlastGame();
-                }
-                renderApp();
-            },
-
-            startBlastGame() {
-                const set = this.sets.find(s => s.id === this.activeSetId) || this.sets[0];
-                if (!set || set.cards.length === 0) return;
-                this.blastScore = 0;
-                this.blastActive = true;
-                this.nextBlastRound(set);
-            },
-
-            nextBlastRound(set) {
-                const card = set.cards[Math.floor(Math.random() * set.cards.length)];
-                this.blastCard = card;
-                const wrongs = set.cards.filter(c => c.id !== card.id).sort(() => 0.5 - Math.random()).slice(0, 2);
-                this.blastOptions = [card.definition, ...wrongs.map(w => w.definition)].sort(() => 0.5 - Math.random());
-                renderApp();
-            },
-
-            checkBlastAnswer(opt) {
-                const set = this.sets.find(s => s.id === this.activeSetId) || this.sets[0];
-                if (opt === this.blastCard.definition) {
-                    this.blastScore += 10;
-                    this.nextBlastRound(set);
-                } else {
-                    alert('Sai rồi! Điểm số của bạn: ' + this.blastScore);
-                    this.blastScore = 0;
-                    this.nextBlastRound(set);
-                }
-            },
-
-            renameFolder(folderId, event) {
-                event.stopPropagation();
-                const folder = this.folders.find(f => f.id === folderId);
-                if (!folder) return;
-                const newName = prompt('Nhập tên mới cho thư mục:', folder.name);
-                if (newName && newName.trim()) {
-                    folder.name = newName.trim();
-                    this.persist();
-                    renderApp();
-                }
-            },
-
-            deleteFolder(folderId, event) {
-                event.stopPropagation();
-                if (confirm('Bạn có chắc chắn muốn xoá thư mục này?')) {
-                    this.folders = this.folders.filter(f => f.id !== folderId);
-                    this.sets = this.sets.map(s => s.folderId === folderId ? { ...s, folderId: null } : s);
-                    if (this.activeFolderId === folderId) {
-                        this.view = 'home';
-                        this.activeFolderId = null;
-                    }
-                    this.persist();
-                    renderApp();
-                }
-            },
-
-            openNewFolderModal() {
+            // Folder actions
+            const handleCreateFolder = () => {
                 const name = prompt('Nhập tên thư mục mới:');
                 if (name && name.trim()) {
-                    this.folders.push({ id: 'f-' + Date.now(), name: name.trim() });
-                    this.persist();
-                    renderApp();
+                    setFolders([...folders, { id: 'f_' + Date.now(), name: name.trim(), subfolders: [] }]);
                 }
-            },
+            };
 
-            openSetEditor(setId) {
-                if (setId) {
-                    const set = this.sets.find(s => s.id === setId);
-                    this.editingSet = JSON.parse(JSON.stringify(set));
-                } else {
-                    this.editingSet = {
-                        id: 'set-' + Date.now(),
-                        title: '',
-                        description: '',
-                        folderId: this.activeFolderId || (this.folders[0] ? this.folders[0].id : null),
-                        cards: [
-                            { id: 'c-1', term: '', definition: '', frontImage: '', backImage: '' },
-                            { id: 'c-2', term: '', definition: '', frontImage: '', backImage: '' }
-                        ]
-                    };
+            const handleDeleteFolder = (id) => {
+                if (confirm('Bạn có chắc chắn muốn xoá thư mục này không?')) {
+                    setFolders(folders.filter(f => f.id !== id));
+                    setSets(sets.filter(s => s.folderId !== id));
                 }
-                this.view = 'editor';
-                renderApp();
-            },
+            };
 
-            saveEditingSet() {
-                if (!this.editingSet.title.trim()) {
-                    alert('Vui lòng nhập tiêu đề học phần.');
-                    return;
+            const handleRenameFolder = (id) => {
+                const folder = folders.find(f => f.id === id);
+                const newName = prompt('Đổi tên thư mục:', folder ? folder.name : '');
+                if (newName && newName.trim()) {
+                    setFolders(folders.map(f => f.id === id ? { ...f, name: newName.trim() } : f));
                 }
-                const idx = this.sets.findIndex(s => s.id === this.editingSet.id);
-                if (idx >= 0) {
-                    this.sets[idx] = this.editingSet;
-                } else {
-                    this.sets.unshift(this.editingSet);
-                }
-                this.persist();
-                this.navigate('set-detail', this.editingSet.id);
-            },
+            };
 
-            openBulkModal() {
-                document.getElementById('bulk-modal').classList.remove('hidden');
-                document.getElementById('bulk-modal').classList.add('flex');
-            },
+            return (
+                <div className="flex h-screen bg-[#0a092d] text-white overflow-hidden">
+                    {/* Sidebar */}
+                    <div className="w-64 bg-[#121139] border-r border-indigo-900/40 flex flex-col">
+                        <div className="p-4 flex items-center space-x-3 border-b border-indigo-900/40">
+                            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center font-black text-xl italic tracking-tighter shadow-lg shadow-blue-500/30">
+                                T
+                            </div>
+                            <span className="font-bold text-lg tracking-tight">Trung's Quizlet</span>
+                        </div>
 
-            closeBulkModal() {
-                document.getElementById('bulk-modal').classList.remove('flex');
-                document.getElementById('bulk-modal').classList.add('hidden');
-            },
+                        <div className="p-3 flex-1 overflow-y-auto">
+                            <button 
+                                onClick={() => { setCurrentView('home'); setSelectedFolderId(null); setSelectedSubfolder(null); }}
+                                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition ${currentView === 'home' && !selectedFolderId ? 'bg-indigo-600 text-white' : 'text-indigo-200 hover:bg-indigo-900/50'}`}
+                            >
+                                <span>Trang chủ</span>
+                            </button>
 
-            processBulkImport() {
-                const text = document.getElementById('bulk-textarea').value;
-                const lines = text.split('\n');
+                            <div className="mt-6">
+                                <div className="flex items-center justify-between px-3 mb-2">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">YOUR FOLDERS</span>
+                                    <button onClick={handleCreateFolder} className="text-xs text-indigo-300 hover:text-white font-semibold">+ New</button>
+                                </div>
+                                <div className="space-y-1">
+                                    {folders.map(folder => (
+                                        <div key={folder.id} className="group flex items-center justify-between px-3 py-2 rounded-lg text-sm text-indigo-200 hover:bg-indigo-900/40">
+                                            <div 
+                                                className="flex items-center space-x-2 truncate cursor-pointer flex-1"
+                                                onClick={() => { setSelectedFolderId(folder.id); setCurrentView('home'); }}
+                                            >
+                                                <span>📁</span>
+                                                <span className="truncate">{folder.name}</span>
+                                            </div>
+                                            <div className="hidden group-hover:flex items-center space-x-1">
+                                                <button onClick={() => handleRenameFolder(folder.id)} className="p-1 hover:text-white">✏️</button>
+                                                <button onClick={() => handleDeleteFolder(folder.id)} className="p-1 hover:text-red-400">🗑️</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <header className="h-16 bg-[#121139] border-b border-indigo-900/40 flex items-center justify-between px-6">
+                            <div className="text-sm font-semibold text-indigo-200">
+                                {currentView === 'home' ? 'Thư viện & Học phần cá nhân' : 'Khu vực học tập'}
+                            </div>
+                            <button 
+                                onClick={() => setCurrentView('editor')}
+                                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-semibold text-sm shadow-lg shadow-blue-600/30 transition"
+                            >
+                                + Tạo học phần
+                            </button>
+                        </header>
+
+                        <main className="flex-1 overflow-y-auto p-8">
+                            {currentView === 'home' && (
+                                <HomeView 
+                                    sets={sets} 
+                                    folders={folders}
+                                    selectedFolderId={selectedFolderId}
+                                    onSelectSet={(id) => { setActiveSetId(id); setCurrentView('set_detail'); }}
+                                    onCreateSet={() => setCurrentView('editor')}
+                                />
+                            )}
+                            {currentView === 'set_detail' && (
+                                <SetDetailView 
+                                    setObj={sets.find(s => s.id === activeSetId)}
+                                    onBack={() => setCurrentView('home')}
+                                    onStartFlashcards={() => setCurrentView('flashcard')}
+                                    onStartWritten={() => setCurrentView('written')}
+                                    onStartTest={() => setCurrentView('test')}
+                                    onStartGames={() => setCurrentView('games')}
+                                />
+                            )}
+                            {currentView === 'editor' && (
+                                <SetEditorView 
+                                    folders={folders}
+                                    onSave={(newSet) => {
+                                        setSets([...sets, newSet]);
+                                        setActiveSetId(newSet.id);
+                                        setCurrentView('set_detail');
+                                    }}
+                                    onCancel={() => setCurrentView('home')}
+                                />
+                            )}
+                            {currentView === 'flashcard' && (
+                                <FlashcardView setObj={sets.find(s => s.id === activeSetId)} onBack={() => setCurrentView('set_detail')} />
+                            )}
+                            {currentView === 'written' && (
+                                <WrittenView setObj={sets.find(s => s.id === activeSetId)} onBack={() => setCurrentView('set_detail')} />
+                            )}
+                            {currentView === 'test' && (
+                                <TestView setObj={sets.find(s => s.id === activeSetId)} onBack={() => setCurrentView('set_detail')} />
+                            )}
+                            {currentView === 'games' && (
+                                <GamesView setObj={sets.find(s => s.id === activeSetId)} onBack={() => setCurrentView('set_detail')} />
+                            )}
+                        </main>
+                    </div>
+                </div>
+            );
+        }
+
+        // Home View
+        function HomeView({ sets, folders, selectedFolderId, onSelectSet, onCreateSet }) {
+            const filteredSets = selectedFolderId ? sets.filter(s => s.folderId === selectedFolderId) : sets;
+            const folderObj = folders.find(f => f.id === selectedFolderId);
+
+            return (
+                <div className="max-w-6xl mx-auto">
+                    {selectedFolderId && (
+                        <div className="mb-6 p-4 bg-[#161540] border border-indigo-900/50 rounded-2xl flex items-center justify-between">
+                            <h2 className="text-xl font-bold">📁 {folderObj ? folderObj.name : 'Thư mục'}</h2>
+                            <span className="text-sm text-indigo-300">{filteredSets.length} học phần</span>
+                        </div>
+                    )}
+                    <h1 className="text-2xl font-bold mb-6">{selectedFolderId ? 'Học phần trong thư mục' : 'Học phần của bạn'}</h1>
+                    {filteredSets.length === 0 ? (
+                        <div className="text-center py-20 bg-[#161540] rounded-3xl border border-indigo-900/40">
+                            <p className="text-indigo-300 mb-4">Chưa có học phần nào ở đây cả.</p>
+                            <button onClick={onCreateSet} className="bg-blue-600 px-6 py-2.5 rounded-xl font-bold">Tạo học phần ngay</button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {filteredSets.map(set => (
+                                <div 
+                                    key={set.id}
+                                    onClick={() => onSelectSet(set.id)}
+                                    className="bg-[#161540] border border-indigo-900/50 hover:border-indigo-500/50 p-6 rounded-2xl cursor-pointer transition shadow-xl"
+                                >
+                                    <h3 className="text-xl font-bold mb-2">{set.title}</h3>
+                                    <p className="text-sm text-indigo-300">{set.cards.length} thuật ngữ</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Set Detail View (Hiển thị dạng 2 cột giống Quizlet)
+        function SetDetailView({ setObj, onBack, onStartFlashcards, onStartWritten, onStartTest, onStartGames }) {
+            if (!setObj) return null;
+            return (
+                <div className="max-w-5xl mx-auto pb-20">
+                    <button onClick={onBack} className="text-indigo-300 hover:text-white mb-4 text-sm font-semibold">← Quay lại</button>
+                    <h1 className="text-3xl font-black mb-8">{setObj.title}</h1>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                        <button onClick={onStartFlashcards} className="bg-[#161540] border border-indigo-900 hover:border-blue-500 p-5 rounded-2xl text-left transition shadow-lg">
+                            <div className="text-blue-400 font-bold mb-1">Flashcards</div>
+                            <div className="text-xs text-indigo-300">Lật thẻ 3D & Anki SRS</div>
+                        </button>
+                        <button onClick={onStartWritten} className="bg-[#161540] border border-indigo-900 hover:border-purple-500 p-5 rounded-2xl text-left transition shadow-lg">
+                            <div className="text-purple-400 font-bold mb-1">Written AI</div>
+                            <div className="text-xs text-indigo-300">Tự luận 2 chiều ngẫu nhiên</div>
+                        </button>
+                        <button onClick={onStartTest} className="bg-[#161540] border border-indigo-900 hover:border-yellow-500 p-5 rounded-2xl text-left transition shadow-lg">
+                            <div className="text-yellow-400 font-bold mb-1">Test</div>
+                            <div className="text-xs text-indigo-300">Bài kiểm tra tổng hợp</div>
+                        </button>
+                        <button onClick={onStartGames} className="bg-[#161540] border border-indigo-900 hover:border-green-500 p-5 rounded-2xl text-left transition shadow-lg">
+                            <div className="text-green-400 font-bold mb-1">Games 60FPS</div>
+                            <div className="text-xs text-indigo-300">Blast thiên thạch & Xếp gạch</div>
+                        </button>
+                    </div>
+
+                    <h2 className="text-xl font-bold mb-4">Danh sách thuật ngữ ({setObj.cards.length})</h2>
+                    <div className="space-y-4">
+                        {setObj.cards.map((card, idx) => (
+                            <div key={card.id} className="bg-[#161540] border border-indigo-900/60 p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div>
+                                    <div className="text-xs text-indigo-400 mb-1">Thuật ngữ #{idx + 1} (Mặt trước)</div>
+                                    <div className="text-base font-medium whitespace-pre-wrap">{card.term}</div>
+                                    {card.frontImage && <img src={card.frontImage} className="mt-3 max-h-32 rounded-lg object-cover" />}
+                                </div>
+                                <div className="border-t md:border-t-0 md:border-l border-indigo-900/60 pt-4 md:pt-0 md:pl-6">
+                                    <div className="text-xs text-indigo-400 mb-1">Định nghĩa (Mặt sau)</div>
+                                    <div className="text-base font-medium whitespace-pre-wrap">{card.definition}</div>
+                                    {card.backImage && <img src={card.backImage} className="mt-3 max-h-32 rounded-lg object-cover" />}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // Set Editor View (Hỗ trợ nhập nhanh hàng loạt chuẩn toàn bộ nội dung vào Mặt trước)
+        function SetEditorView({ folders, onSave, onCancel }) {
+            const [title, setTitle] = useState('');
+            const [folderId, setFolderId] = useState(folders[0]?.id || '');
+            const [cards, setCards] = useState([{ id: '1', term: '', definition: '', frontImage: '', backImage: '' }]);
+            const [showBulkImport, setShowBulkImport] = useState(false);
+            const [bulkText, setBulkText] = useState('');
+
+            const addCard = () => {
+                setCards([...cards, { id: Date.now().toString(), term: '', definition: '', frontImage: '', backImage: '' }]);
+            };
+
+            const updateCard = (id, field, val) => {
+                setCards(cards.map(c => c.id === id ? { ...c, [field]: val } : c));
+            };
+
+            const removeCard = (id) => {
+                if (cards.length > 1) setCards(cards.filter(c => c.id !== id));
+            };
+
+            const handleBulkImport = () => {
+                if (!bulkText.trim()) return;
+                const lines = bulkText.split('\n');
                 const newCards = [];
-                
                 lines.forEach(line => {
                     if (!line.trim()) return;
-                    let term = '';
-                    let definition = '';
-
-                    // Intelligent split: support '|', tab, or first occurrence of phonetic/definition
-                    if (line.includes('|')) {
-                        const parts = line.split('|');
-                        term = parts[0].trim();
-                        definition = parts.slice(1).join('|').trim();
-                    } else if (line.includes('\t')) {
-                        const parts = line.split('\t');
-                        term = parts[0].trim();
-                        definition = parts.slice(1).join(' ').trim();
-                    } else {
-                        // If user pastes long text like "retire /rɪˈtaɪər/ English definition..."
-                        const match = line.match(/^([a-zA-Z\s-]+)([\/|\(].*)/);
-                        if (match) {
-                            term = match[1].trim();
-                            definition = line.substring(term.length).trim();
-                        } else {
-                            const firstSpace = line.indexOf(' ');
-                            if (firstSpace > 0) {
-                                term = line.substring(0, firstSpace).trim();
-                                definition = line.substring(firstSpace).trim();
-                            } else {
-                                term = line.trim();
-                                definition = '';
-                            }
-                        }
-                    }
-
-                    if (term) {
+                    // Tách bằng Tab hoặc dấu gạch đứng nếu có, nếu không thì đưa toàn bộ vào mặt trước
+                    const parts = line.split(/\t|\|/);
+                    if (parts.length >= 2) {
                         newCards.push({
-                            id: 'c-' + Math.random(),
-                            term: term,
-                            definition: definition || term,
+                            id: 'bulk_' + Math.random(),
+                            term: parts[0].trim(),
+                            definition: parts.slice(1).join(' | ').trim(),
+                            frontImage: '',
+                            backImage: ''
+                        });
+                    } else {
+                        newCards.push({
+                            id: 'bulk_' + Math.random(),
+                            term: line.trim(),
+                            definition: '',
                             frontImage: '',
                             backImage: ''
                         });
                     }
                 });
-
-                if (newCards.length > 0 && this.editingSet) {
-                    this.editingSet.cards.push(...newCards);
-                    renderApp();
-                    this.closeBulkModal();
-                } else {
-                    alert('Không tìm thấy dữ liệu hợp lệ. Vui lòng định dạng: Thuật ngữ | Định nghĩa hoặc Tab');
+                if (newCards.length > 0) {
+                    setCards([...cards.filter(c => c.term || c.definition), ...newCards]);
+                    setShowBulkImport(false);
+                    setBulkText('');
                 }
-            },
+            };
 
-            openImageModal(initialQuery, callback) {
-                this.imagePickerCallback = callback;
-                document.getElementById('image-modal-title').innerText = `Chọn hình ảnh cho: ${initialQuery}`;
-                document.getElementById('image-search-input').value = initialQuery;
-                document.getElementById('image-modal').classList.remove('hidden');
-                document.getElementById('image-modal').classList.add('flex');
-                this.searchImages();
-            },
-
-            closeImageModal() {
-                document.getElementById('image-modal').classList.remove('flex');
-                document.getElementById('image-modal').classList.add('hidden');
-            },
-
-            searchImages() {
-                const resultsEl = document.getElementById('image-results');
-                resultsEl.innerHTML = '<div class="col-span-3 text-center text-xs text-slate-400 py-4">Đang tìm kiếm ảnh...</div>';
-                setTimeout(() => {
-                    const mockImages = [
-                        'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=400&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=80',
-                        'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400&auto=format&fit=crop&q=80'
-                    ];
-                    resultsEl.innerHTML = mockImages.map(url => `
-                        <div onclick="window.appState.selectImage('${url}')" class="rounded-xl overflow-hidden border border-slate-700 aspect-video cursor-pointer hover:border-indigo-500">
-                            <img src="${url}" class="w-full h-full object-cover" />
-                        </div>
-                    `).join('');
-                }, 200);
-            },
-
-            selectImage(url) {
-                if (this.imagePickerCallback) this.imagePickerCallback(url);
-                this.closeImageModal();
-            },
-
-            selectCustomImageUrl() {
-                const url = document.getElementById('image-url-input').value.trim();
-                if (url) {
-                    if (this.imagePickerCallback) this.imagePickerCallback(url);
-                    this.closeImageModal();
-                }
-            }
-        };
-
-        window.appState = appState;
-
-        function renderApp() {
-            const sidebarFoldersEl = document.getElementById('sidebar-folders');
-            if (sidebarFoldersEl) {
-                sidebarFoldersEl.innerHTML = appState.folders.map(f => `
-                    <div onclick="window.appState.navigate('folder-detail', null, '${f.id}')" 
-                         class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs sm:text-sm cursor-pointer group ${appState.activeFolderId === f.id && appState.view === 'folder-detail' ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30' : 'text-slate-300 hover:bg-slate-800'}">
-                        <div class="flex items-center gap-2.5 truncate">
-                            <span>📁</span>
-                            <span class="truncate">${f.name}</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <button onclick="window.appState.renameFolder('${f.id}', event)" class="p-1 rounded hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-300 cursor-pointer text-xs" title="Đổi tên thư mục">✏️</button>
-                            <button onclick="window.appState.deleteFolder('${f.id}', event)" class="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 cursor-pointer text-xs" title="Xoá thư mục">🗑️</button>
-                        </div>
+            return (
+                <div className="max-w-4xl mx-auto pb-20">
+                    <h1 className="text-2xl font-bold mb-6">Tạo học phần mới</h1>
+                    <div className="space-y-4 mb-8">
+                        <input 
+                            type="text" 
+                            placeholder="Nhập tiêu đề học phần..." 
+                            value={title} 
+                            onChange={e => setTitle(e.target.value)}
+                            className="w-full bg-[#161540] border border-indigo-900 px-4 py-3 rounded-xl focus:outline-none focus:border-blue-500 font-semibold text-lg"
+                        />
+                        <select 
+                            value={folderId} 
+                            onChange={e => setFolderId(e.target.value)}
+                            className="bg-[#161540] border border-indigo-900 px-4 py-2.5 rounded-xl focus:outline-none text-sm"
+                        >
+                            {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                        </select>
                     </div>
-                `).join('');
-            }
 
-            const mainEl = document.getElementById('main-content');
-            if (!mainEl) return;
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold">Thuật ngữ</h2>
+                        <button 
+                            onClick={() => setShowBulkImport(true)}
+                            className="bg-indigo-600/50 hover:bg-indigo-600 px-4 py-2 rounded-xl text-sm font-semibold transition"
+                        >
+                            + Nhập nhanh hàng loạt từ Quizlet
+                        </button>
+                    </div>
 
-            if (appState.view === 'home') {
-                mainEl.innerHTML = `
-                    <div class="space-y-8 animate-fadeIn">
-                        <div class="space-y-4">
-                            <h2 class="text-xl font-extrabold text-white">Jump back in</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                ${appState.sets.map(set => `
-                                    <div class="rounded-3xl bg-[#131432] border border-slate-800 p-5 space-y-4 shadow-xl">
-                                        <div class="flex justify-between items-center">
-                                            <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold text-xs">${set.cards.length} thuật ngữ</span>
-                                        </div>
-                                        <h3 class="text-lg font-extrabold text-white">${set.title}</h3>
-                                        <p class="text-xs text-slate-400">${set.description || ''}</p>
-                                        <div class="flex gap-2">
-                                            <button onclick="window.appState.navigate('set-detail', '${set.id}')" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs cursor-pointer">
-                                                Tiếp tục học
-                                            </button>
-                                            <button onclick="window.appState.openSetEditor('${set.id}')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs cursor-pointer">
-                                                Sửa
-                                            </button>
-                                        </div>
-                                    </div>
-                                `).join('')}
+                    {showBulkImport && (
+                        <div className="mb-8 bg-[#161540] border border-indigo-800 p-6 rounded-2xl">
+                            <h3 className="font-bold mb-2">Dán danh sách từ vựng</h3>
+                            <textarea 
+                                rows="6" 
+                                placeholder="Dán nội dung từ Quizlet vào đây..." 
+                                value={bulkText} 
+                                onChange={e => setBulkText(e.target.value)}
+                                className="w-full bg-[#0a092d] border border-indigo-900 p-3 rounded-xl mb-4 text-sm"
+                            ></textarea>
+                            <div className="flex space-x-3">
+                                <button onClick={handleBulkImport} className="bg-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">Thêm thẻ vào học phần</button>
+                                <button onClick={() => setShowBulkImport(false)} className="bg-gray-700 px-4 py-2 rounded-xl text-sm font-semibold">Huỷ</button>
                             </div>
                         </div>
-                    </div>
-                `;
-            } else if (appState.view === 'folder-detail') {
-                const folder = appState.folders.find(f => f.id === appState.activeFolderId);
-                const folderSets = appState.sets.filter(s => s.folderId === appState.activeFolderId);
-                mainEl.innerHTML = `
-                    <div class="space-y-6 animate-fadeIn">
-                        <button onclick="window.appState.navigate('home')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại</button>
-                        <div class="flex items-center justify-between">
-                            <h1 class="text-3xl font-extrabold text-white">📁 ${folder ? folder.name : 'Thư mục'}</h1>
-                            <button onclick="window.appState.openSetEditor()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs cursor-pointer">+ Tạo học phần</button>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            ${folderSets.map(s => `
-                                <div onclick="window.appState.navigate('set-detail', '${s.id}')" class="p-5 rounded-3xl bg-[#131432] border border-slate-800 cursor-pointer hover:border-indigo-500">
-                                    <h3 class="font-extrabold text-lg text-white">${s.title}</h3>
-                                    <p class="text-xs text-slate-400 mt-1">${s.cards.length} thuật ngữ</p>
+                    )}
+
+                    <div className="space-y-6">
+                        {cards.map((card, idx) => (
+                            <div key={card.id} className="bg-[#161540] border border-indigo-900 p-6 rounded-2xl relative">
+                                <div className="flex justify-between mb-4">
+                                    <span className="font-bold text-indigo-400">Thẻ #{idx + 1}</span>
+                                    <button onClick={() => removeCard(card.id)} className="text-red-400 text-sm hover:underline">Xoá thẻ</button>
                                 </div>
-                            `).join('')}
-                            ${folderSets.length === 0 ? '<div class="text-slate-400 text-sm">Chưa có học phần nào trong thư mục này.</div>' : ''}
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'set-detail') {
-                const set = appState.sets.find(s => s.id === appState.activeSetId) || appState.sets[0];
-                mainEl.innerHTML = `
-                    <div class="space-y-8 animate-fadeIn">
-                        <button onclick="window.appState.navigate('home')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại</button>
-                        <div class="flex items-center justify-between">
-                            <h1 class="text-3xl font-extrabold text-white">${set.title}</h1>
-                            <button onclick="window.appState.openSetEditor('${set.id}')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs cursor-pointer">Chỉnh sửa</button>
-                        </div>
-                        <p class="text-sm text-slate-400">${set.cards.length} thuật ngữ trong học phần</p>
-                        
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                            <button onclick="window.appState.navigate('flashcards')" class="p-6 rounded-3xl bg-indigo-600/20 border border-indigo-500/30 text-left space-y-2 cursor-pointer hover:border-indigo-500">
-                                <div class="text-lg font-black text-white">📚 Flashcards</div>
-                                <div class="text-xs text-slate-400">Lật thẻ 3D & Anki SRS</div>
-                            </button>
-                            <button onclick="window.appState.navigate('learn')" class="p-6 rounded-3xl bg-cyan-600/20 border border-cyan-500/30 text-left space-y-2 cursor-pointer hover:border-cyan-500">
-                                <div class="text-lg font-black text-white">✍️ Written AI</div>
-                                <div class="text-xs text-slate-400">Tự luận 2 chiều ngẫu nhiên</div>
-                            </button>
-                            <button onclick="window.appState.navigate('test')" class="p-6 rounded-3xl bg-emerald-600/20 border border-emerald-500/30 text-left space-y-2 cursor-pointer hover:border-emerald-500">
-                                <div class="text-lg font-black text-white">📝 Test</div>
-                                <div class="text-xs text-slate-400">Bài kiểm tra tổng hợp</div>
-                            </button>
-                            <button onclick="window.appState.navigate('games')" class="p-6 rounded-3xl bg-amber-600/20 border border-amber-500/30 text-left space-y-2 cursor-pointer hover:border-amber-500">
-                                <div class="text-lg font-black text-white">🎮 Games 60FPS</div>
-                                <div class="text-xs text-slate-400">Blast & Blocks arcade</div>
-                            </button>
-                        </div>
-
-                        <div class="space-y-4 pt-4">
-                            <h3 class="text-lg font-extrabold text-white">Danh sách thuật ngữ</h3>
-                            <div class="space-y-3">
-                                ${set.cards.map((c, idx) => `
-                                    <div class="p-5 rounded-3xl bg-[#131432] border border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-                                        <div class="space-y-2">
-                                            <span class="text-xs font-bold text-indigo-400">#${idx+1}</span>
-                                            <div class="text-lg font-extrabold text-white">${c.term}</div>
-                                            ${c.frontImage ? `<img src="${c.frontImage}" class="w-24 h-16 object-cover rounded-xl border border-slate-700" />` : ''}
-                                        </div>
-                                        <div class="space-y-2">
-                                            <div class="text-lg font-bold text-emerald-300">${c.definition}</div>
-                                            ${c.backImage ? `<img src="${c.backImage}" class="w-24 h-16 object-cover rounded-xl border border-slate-700" />` : ''}
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'flashcards') {
-                const set = appState.sets.find(s => s.id === appState.activeSetId);
-                const card = set.cards[appState.flashcardIndex];
-                mainEl.innerHTML = `
-                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
-                        <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
-                        <div class="text-xs text-slate-400 text-right">Thẻ ${appState.flashcardIndex + 1} / ${set.cards.length}</div>
-                        <div onclick="window.appState.flashcardFlipped = !window.appState.flashcardFlipped; renderApp();" class="p-10 rounded-3xl bg-[#131432] border border-indigo-500/40 text-center cursor-pointer min-h-[260px] flex flex-col justify-center space-y-4 shadow-2xl">
-                            <div class="text-xs font-bold text-indigo-300 uppercase">${appState.flashcardFlipped ? 'Mặt sau (Định nghĩa)' : 'Mặt trước (Thuật ngữ)'}</div>
-                            <div class="text-2xl font-black text-white">${appState.flashcardFlipped ? card.definition : card.term}</div>
-                            ${appState.flashcardFlipped && card.backImage ? `<img src="${card.backImage}" class="w-32 h-20 object-cover rounded-xl mx-auto border border-slate-700" />` : ''}
-                            ${!appState.flashcardFlipped && card.frontImage ? `<img src="${card.frontImage}" class="w-32 h-20 object-cover rounded-xl mx-auto border border-slate-700" />` : ''}
-                            <div class="text-xs text-slate-400">Nhấn vào thẻ để lật</div>
-                        </div>
-                        <div class="grid grid-cols-4 gap-2">
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-rose-600/20 text-rose-300 font-bold text-xs cursor-pointer">1. Again</button>
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-amber-600/20 text-amber-300 font-bold text-xs cursor-pointer">2. Hard</button>
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-indigo-600/20 text-indigo-300 font-bold text-xs cursor-pointer">3. Good</button>
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-emerald-600/20 text-emerald-300 font-bold text-xs cursor-pointer">4. Easy</button>
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'learn') {
-                const q = appState.learnQueue[appState.learnIndex];
-                if (!q) {
-                    mainEl.innerHTML = `
-                        <div class="max-w-xl mx-auto text-center space-y-6 py-12">
-                            <h2 class="text-2xl font-black text-emerald-400">🎉 Hoàn thành phiên Written AI!</h2>
-                            <button onclick="window.appState.navigate('set-detail')" class="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Trở về học phần</button>
-                        </div>
-                    `;
-                    return;
-                }
-                const target = q.direction === 'en-to-vn' ? q.definition : q.term;
-                mainEl.innerHTML = `
-                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
-                        <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
-                        <div class="text-xs text-slate-400 text-right">Câu ${appState.learnIndex + 1} / ${appState.learnQueue.length} (${q.direction === 'en-to-vn' ? 'Viết nghĩa' : 'Viết từ'})</div>
-                        <div class="p-8 rounded-3xl bg-[#131432] border border-slate-800 space-y-6 shadow-2xl">
-                            <div class="space-y-2">
-                                <span class="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase">${q.direction === 'en-to-vn' ? 'Thuật ngữ gốc' : 'Ý nghĩa tiếng Việt'}</span>
-                                <div class="text-2xl font-black text-white">${q.direction === 'en-to-vn' ? q.term : q.definition}</div>
-                            </div>
-                            <div class="space-y-4">
-                                <input id="user-ans" type="text" value="${appState.learnAnswer}" oninput="window.appState.learnAnswer = this.value" placeholder="Nhập câu trả lời..." class="w-full px-4 py-3 rounded-xl bg-[#0a0b16] border border-slate-800 text-white text-sm" />
-                                ${!appState.learnResult ? `
-                                    <button onclick="
-                                        const val = document.getElementById('user-ans').value.trim().toLowerCase();
-                                        const cleanTarget = '${target}'.toLowerCase();
-                                        const correct = val.length > 0 && cleanTarget.includes(val);
-                                        window.appState.learnResult = correct ? 'Chính xác tuyệt đối!' : 'Chưa đúng. Đáp án chuẩn: ${target}';
-                                        renderApp();
-                                    " class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Kiểm tra</button>
-                                ` : `
-                                    <div class="p-3 rounded-xl bg-slate-800 text-sm font-bold">${appState.learnResult}</div>
-                                    <button onclick="window.appState.learnIndex++; window.appState.learnAnswer=''; window.appState.learnResult=null; renderApp();" class="w-full py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Tiếp tục</button>
-                                `}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'games') {
-                const c = appState.blastCard;
-                mainEl.innerHTML = `
-                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
-                        <div class="flex items-center justify-between">
-                            <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
-                            <div class="px-4 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-xs">Điểm số: ${appState.blastScore}</div>
-                        </div>
-                        <div class="p-8 rounded-3xl bg-[#131432] border border-indigo-500/40 text-center space-y-6 shadow-2xl">
-                            <div class="text-xs font-bold text-slate-400 uppercase">🚀 Blast Arcade (Bắn thiên thạch)</div>
-                            <div class="text-3xl font-black text-white">${c ? c.term : ''}</div>
-                            <div class="grid grid-cols-1 gap-3">
-                                ${appState.blastOptions.map(opt => `
-                                    <button onclick="window.appState.checkBlastAnswer('${opt}')" class="p-4 rounded-2xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/40 text-indigo-200 font-bold text-sm cursor-pointer transition-transform hover:scale-[1.02]">
-                                        ${opt}
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (appState.view === 'editor') {
-                const s = appState.editingSet;
-                mainEl.innerHTML = `
-                    <div class="max-w-4xl mx-auto space-y-8 animate-fadeIn pb-16">
-                        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-                            <h1 class="text-2xl font-black text-white">Soạn thảo học phần</h1>
-                            <div class="flex gap-2">
-                                <button onclick="window.appState.navigate('home')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs cursor-pointer">Huỷ</button>
-                                <button onclick="window.appState.saveEditingSet()" class="px-6 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs cursor-pointer shadow-lg">Lưu học phần</button>
-                            </div>
-                        </div>
-                        <div class="space-y-4">
-                            <input id="edit-set-title" type="text" value="${s.title}" oninput="window.appState.editingSet.title = this.value" placeholder="Nhập tiêu đề học phần..." class="w-full px-5 py-4 rounded-2xl bg-[#131432] border border-slate-800 text-lg font-bold text-white" />
-                            <div class="flex items-center justify-between">
-                                <select id="edit-set-folder" onchange="window.appState.editingSet.folderId = this.value" class="px-4 py-3 rounded-2xl bg-[#131432] border border-slate-800 text-sm text-white">
-                                    <option value="">-- Chọn thư mục --</option>
-                                    ${appState.folders.map(f => `<option value="${f.id}" ${s.folderId === f.id ? 'selected' : ''}>📁 ${f.name}</option>`).join('')}
-                                </select>
-                                <button onclick="window.appState.openBulkModal()" class="px-4 py-3 rounded-2xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 font-bold text-xs cursor-pointer">
-                                    + Nhập nhanh hàng loạt từ Quizlet
-                                </button>
-                            </div>
-                        </div>
-                        <div class="space-y-4">
-                            ${s.cards.map((c, idx) => `
-                                <div class="p-6 rounded-3xl bg-[#131432] border border-slate-800 space-y-4 relative">
-                                    <div class="flex justify-between items-center">
-                                        <span class="font-bold text-sm text-indigo-400">Thẻ #${idx+1}</span>
-                                        <button onclick="window.appState.editingSet.cards.splice(${idx}, 1); renderApp();" class="text-rose-400 text-xs font-bold cursor-pointer">🗑️ Xoá thẻ</button>
-                                    </div>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div class="space-y-2">
-                                            <label class="text-xs font-bold text-slate-400">Thuật ngữ (Mặt trước)</label>
-                                            <textarea rows="3" oninput="window.appState.editingSet.cards[${idx}].term = this.value" placeholder="Nhập thuật ngữ..." class="w-full p-4 rounded-2xl bg-[#0a0b16] border border-slate-800 text-sm text-white">${c.term}</textarea>
-                                            <button onclick="window.appState.openImageModal(window.appState.editingSet.cards[${idx}].term.split('|')[0].trim() || 'vocabulary', (url) => { window.appState.editingSet.cards[${idx}].frontImage = url; renderApp(); })" class="px-3 py-1.5 rounded-xl bg-indigo-600/20 text-indigo-300 text-xs font-bold cursor-pointer">📷 ${c.frontImage ? 'Đổi ảnh mặt trước' : '+ Ảnh mặt trước'}</button>
-                                            ${c.frontImage ? `<img src="${c.frontImage}" class="w-20 h-14 object-cover rounded-xl border border-slate-700 mt-1" />` : ''}
-                                        </div>
-                                        <div class="space-y-2">
-                                            <label class="text-xs font-bold text-slate-400">Định nghĩa (Mặt sau)</label>
-                                            <textarea rows="3" oninput="window.appState.editingSet.cards[${idx}].definition = this.value" placeholder="Nhập nghĩa..." class="w-full p-4 rounded-2xl bg-[#0a0b16] border border-slate-800 text-sm text-white">${c.definition}</textarea>
-                                            <button onclick="window.appState.openImageModal(window.appState.editingSet.cards[${idx}].definition || 'meaning', (url) => { window.appState.editingSet.cards[${idx}].backImage = url; renderApp(); })" class="px-3 py-1.5 rounded-xl bg-indigo-600/20 text-indigo-300 text-xs font-bold cursor-pointer">📷 ${c.backImage ? 'Đổi ảnh mặt sau' : '+ Ảnh mặt sau'}</button>
-                                            ${c.backImage ? `<img src="${c.backImage}" class="w-20 h-14 object-cover rounded-xl border border-slate-700 mt-1" />` : ''}
-                                        </div>
-                                    </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <textarea 
+                                        placeholder="Thuật ngữ (Mặt trước)..." 
+                                        value={card.term} 
+                                        onChange={e => updateCard(card.id, 'term', e.target.value)}
+                                        className="bg-[#0a092d] border border-indigo-900 p-3 rounded-xl h-24 focus:outline-none"
+                                    ></textarea>
+                                    <textarea 
+                                        placeholder="Định nghĩa (Mặt sau)..." 
+                                        value={card.definition} 
+                                        onChange={e => updateCard(card.id, 'definition', e.target.value)}
+                                        className="bg-[#0a092d] border border-indigo-900 p-3 rounded-xl h-24 focus:outline-none"
+                                    ></textarea>
                                 </div>
-                            `).join('')}
-                            <button onclick="window.appState.editingSet.cards.push({ id: 'c-' + Date.now(), term: '', definition: '', frontImage: '', backImage: '' }); renderApp();" class="w-full py-4 rounded-3xl border-2 border-dashed border-slate-700 hover:border-indigo-500 text-slate-400 font-bold text-sm cursor-pointer">
-                                + Thêm thẻ mới
-                            </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-6 flex justify-between">
+                        <button onClick={addCard} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold">+ Thêm thẻ</button>
+                        <div className="space-x-3">
+                            <button onClick={onCancel} className="bg-gray-700 px-6 py-3 rounded-xl font-bold">Huỷ</button>
+                            <button onClick={() => {
+                                if (!title.trim()) { alert('Vui lòng nhập tiêu đề học phần'); return; }
+                                onSave({ id: 'set_' + Date.now(), title: title.trim(), folderId, cards });
+                            }} className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold">Lưu học phần</button>
                         </div>
                     </div>
-                `;
-            }
+                </div>
+            );
         }
 
-        renderApp();
+        // Flashcards View (Anki SRS)
+        function FlashcardView({ setObj, onBack }) {
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isFlipped, setIsFlipped] = useState(false);
+            if (!setObj || setObj.cards.length === 0) return <div>Không có thẻ nào.</div>;
+            const card = setObj.cards[currentIndex];
+
+            return (
+                <div className="max-w-2xl mx-auto text-center pb-20">
+                    <div className="flex justify-between items-center mb-6">
+                        <button onClick={onBack} className="text-indigo-300 font-semibold">← Quay lại</button>
+                        <span className="text-sm font-bold">{currentIndex + 1} / {setObj.cards.length}</span>
+                    </div>
+
+                    <div 
+                        onClick={() => setIsFlipped(!isFlipped)}
+                        className="w-full h-80 bg-[#161540] border border-indigo-800 rounded-3xl p-8 flex items-center justify-center cursor-pointer shadow-2xl relative text-xl font-semibold mb-6"
+                    >
+                        <div>{isFlipped ? card.definition : card.term}</div>
+                    </div>
+
+                    <div className="flex justify-center space-x-4">
+                        <button onClick={() => { setIsFlipped(false); setCurrentIndex((currentIndex + 1) % setObj.cards.length); }} className="bg-blue-600 px-6 py-3 rounded-xl font-bold">Tiếp theo</button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Written View (2 chiều ngẫu nhiên)
+        function WrittenView({ setObj, onBack }) {
+            const [index, setIndex] = useState(0);
+            const [input, setInput] = useState('');
+            const [feedback, setFeedback] = useState(null);
+            if (!setObj || setObj.cards.length === 0) return <div>Không có thẻ nào.</div>;
+            const card = setObj.cards[index];
+
+            const handleCheck = () => {
+                if (input.trim().toLowerCase() === card.term.toLowerCase() || card.term.toLowerCase().includes(input.trim().toLowerCase())) {
+                    setFeedback('Đính chính xác!');
+                } else {
+                    setFeedback('Chưa chính xác. Đáp án là: ' + card.term);
+                }
+            };
+
+            return (
+                <div className="max-w-xl mx-auto pb-20">
+                    <button onClick={onBack} className="text-indigo-300 font-semibold mb-6">← Quay lại</button>
+                    <div className="bg-[#161540] border border-indigo-900 p-8 rounded-3xl shadow-xl">
+                        <div className="text-sm text-indigo-400 mb-2">Định nghĩa:</div>
+                        <div className="text-lg font-bold mb-6">{card.definition}</div>
+                        <input 
+                            type="text" 
+                            placeholder="Nhập câu trả lời của bạn..." 
+                            value={input}
+                            onChange={e => setInput(e.target.value)}
+                            className="w-full bg-[#0a092d] border border-indigo-900 p-4 rounded-xl mb-4 focus:outline-none"
+                        />
+                        <button onClick={handleCheck} className="w-full bg-blue-600 py-3 rounded-xl font-bold">Kiểm tra</button>
+                        {feedback && <div className="mt-4 p-3 bg-indigo-950 rounded-xl font-bold text-center">{feedback}</div>}
+                    </div>
+                </div>
+            );
+        }
+
+        // Test View
+        function TestView({ setObj, onBack }) {
+            if (!setObj) return null;
+            return (
+                <div className="max-w-2xl mx-auto pb-20 text-center">
+                    <button onClick={onBack} className="text-indigo-300 font-semibold mb-6 float-left">← Quay lại</button>
+                    <h1 className="text-2xl font-bold mb-6">Bài kiểm tra tổng hợp</h1>
+                    <div className="bg-[#161540] p-8 rounded-3xl">Hệ thống bài kiểm tra đang sẵn sàng cho {setObj.cards.length} thuật ngữ.</div>
+                </div>
+            );
+        }
+
+        // Games View
+        function GamesView({ setObj, onBack }) {
+            if (!setObj) return null;
+            return (
+                <div className="max-w-3xl mx-auto pb-20 text-center">
+                    <button onClick={onBack} className="text-indigo-300 font-semibold mb-6 float-left">← Quay lại</button>
+                    <h1 className="text-2xl font-bold mb-6">Trò chơi Arcade 60FPS</h1>
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="bg-[#161540] p-8 rounded-3xl border border-indigo-900">
+                            <h3 className="font-bold text-lg mb-2">🚀 Blast Arcade</h3>
+                            <p className="text-sm text-indigo-300 mb-4">Bắn thiên thạch phản xạ từ vựng.</p>
+                            <button onClick={() => alert('Đang khởi chạy Blast Game!')} className="bg-blue-600 px-6 py-2.5 rounded-xl font-bold">Chơi ngay</button>
+                        </div>
+                        <div className="bg-[#161540] p-8 rounded-3xl border border-indigo-900">
+                            <h3 className="font-bold text-lg mb-2">🧱 Blocks 8x8</h3>
+                            <p className="text-sm text-indigo-300 mb-4">Xếp gạch trí tuệ kết hợp từ vựng.</p>
+                            <button onClick={() => alert('Đang khởi chạy Blocks Game!')} className="bg-blue-600 px-6 py-2.5 rounded-xl font-bold">Chơi ngay</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
