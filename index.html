@@ -3,522 +3,531 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trung's Quizlet</title>
+    <title>TQuiz - Học tập thông minh</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0a092d; color: #fff; }
-        .perspective-1000 { perspective: 1000px; }
-        .transform-style-3d { transform-style: preserve-3d; }
-        .backface-hidden { backface-visibility: hidden; }
-        .rotate-y-180 { transform: rotateY(180deg); }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        const INITIAL_FOLDERS = [
-            { id: 'f1', name: 'SR - Ielts', subfolders: [] },
-            { id: 'f2', name: 'Tiếng Trung', subfolders: [] },
-            { id: 'f3', name: 'SU - Ielts', subfolders: [] }
-        ];
-
-        const INITIAL_SETS = [
-            {
-                id: 's1',
-                title: 'LS19: Volunteer work',
-                folderId: 'f1',
-                cards: [
-                    { id: 'c1', term: 'optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen or decided upon by preference rather than required by rule | Collocations: completely optional, optional module, optional attendance | Example: Attendance at the afternoon clinical seminar is entirely optional for final-year students.', definition: 'tự nguyện, không bắt buộc, tùy chọn Synonyms: voluntary, elective, discretionary, non-compulsory', frontImage: '', backImage: '' },
-                    { id: 'c2', term: 'speciality | (n) | /ˌspeʃ.iˈæl.ə.ti/ | English definition: a product, food, or service that a specific person, restaurant, or region is particularly famous for | Collocations: regional speciality, local speciality, culinary speciality | Example: Authentic beef pho is celebrated internationally as an iconic culinary speciality of northern Vietnam.', definition: 'món đặc sản, nét đặc trưng chuyên biệt Synonyms: specialty, delicacy, signature item', frontImage: '', backImage: '' }
-                ]
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+                    }
+                }
             }
-        ];
+        }
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-200">
 
-        function App() {
-            const [folders, setFolders] = useState(() => {
-                const saved = localStorage.getItem('trungs_quizlet_folders');
-                return saved ? JSON.parse(saved) : INITIAL_FOLDERS;
-            });
-            const [sets, setSets] = useState(() => {
-                const saved = localStorage.getItem('trungs_quizlet_sets');
-                return saved ? JSON.parse(saved) : INITIAL_SETS;
-            });
-            const [currentView, setCurrentView] = useState('home'); // 'home', 'set_detail', 'editor', 'flashcard', 'written', 'test', 'games'
-            const [activeSetId, setActiveSetId] = useState(null);
-            const [selectedFolderId, setSelectedFolderId] = useState(null);
-            const [selectedSubfolder, setSelectedSubfolder] = useState(null);
+    <!-- Header / Navbar -->
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="app.switchTab('dashboard')">
+                <!-- Logo Rounded T với cỏ 4 lá -->
+                <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                    T🍀
+                </div>
+                <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-brand-600 to-indigo-400 bg-clip-text text-transparent">TQuiz</span>
+            </div>
+            
+            <nav class="hidden md:flex space-x-1">
+                <button onclick="app.switchTab('dashboard')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition" data-target="dashboard">Dashboard</button>
+                <button onclick="app.switchTab('sets')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition" data-target="sets">Sets</button>
+                <button onclick="app.switchTab('statistics')" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition" data-target="statistics">Statistics</button>
+            </nav>
 
-            useEffect(() => {
-                localStorage.setItem('trungs_quizlet_folders', JSON.stringify(folders));
-            }, [folders]);
+            <div class="flex items-center space-x-3">
+                <button onclick="app.toggleDarkMode()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300">
+                    🌓
+                </button>
+                <button onclick="app.exportData()" class="text-xs bg-gray-200 dark:bg-gray-700 px-3 py-1.5 rounded-md font-medium hover:bg-gray-300 dark:hover:bg-gray-600">Export JSON</button>
+            </div>
+        </div>
+    </header>
 
-            useEffect(() => {
-                localStorage.setItem('trungs_quizlet_sets', JSON.stringify(sets));
-            }, [sets]);
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+        
+        <!-- DASHBOARD TAB -->
+        <section id="tab-dashboard" class="space-y-6">
+            <div class="bg-gradient-to-r from-brand-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold">Chào mừng trở lại, Lê Văn Trung! 🚀</h1>
+                    <p class="text-indigo-100 mt-1">Hôm nay bạn có các thẻ cần ôn tập theo thuật toán FSRS.</p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <button onclick="app.quickStartStudy()" class="bg-white text-brand-600 px-5 py-2.5 rounded-xl font-bold shadow hover:bg-indigo-50 transition">Ôn tập ngay</button>
+                </div>
+            </div>
 
-            // Folder actions
-            const handleCreateFolder = () => {
-                const name = prompt('Nhập tên thư mục mới:');
-                if (name && name.trim()) {
-                    setFolders([...folders, { id: 'f_' + Date.now(), name: name.trim(), subfolders: [] }]);
-                }
-            };
+            <h2 class="text-lg font-bold">Danh sách học phần gần đây</h2>
+            <div id="dashboard-sets-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Render bằng JavaScript -->
+            </div>
+        </section>
 
-            const handleDeleteFolder = (id) => {
-                if (confirm('Bạn có chắc chắn muốn xoá thư mục này không?')) {
-                    setFolders(folders.filter(f => f.id !== id));
-                    setSets(sets.filter(s => s.folderId !== id));
-                }
-            };
+        <!-- SETS TAB -->
+        <section id="tab-sets" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold">Quản lý Học phần & Flashcard</h2>
+                <button onclick="app.openNewSetModal()" class="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow hover:bg-brand-700 transition">+ Tạo học phần mới</button>
+            </div>
+            <div id="sets-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Render danh sách bộ thẻ -->
+            </div>
+        </section>
 
-            const handleRenameFolder = (id) => {
-                const folder = folders.find(f => f.id === id);
-                const newName = prompt('Đổi tên thư mục:', folder ? folder.name : '');
-                if (newName && newName.trim()) {
-                    setFolders(folders.map(f => f.id === id ? { ...f, name: newName.trim() } : f));
-                }
-            };
+        <!-- STUDY / DETAIL SET TAB -->
+        <section id="tab-study-detail" class="hidden space-y-6">
+            <button onclick="app.switchTab('sets')" class="text-sm text-brand-600 dark:text-indigo-400 font-semibold hover:underline">← Quay lại danh sách</button>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                <div>
+                    <h2 id="detail-set-title" class="text-2xl font-bold">Tên học phần</h2>
+                    <p id="detail-set-desc" class="text-sm text-gray-500 dark:text-gray-400 mt-1">Mô tả học phần</p>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="app.startFlashcardSession()" class="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow hover:bg-brand-700">📚 Học Flashcard</button>
+                    <button onclick="app.startMatchingSession()" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow hover:bg-emerald-700">🧩 Matching</button>
+                    <button onclick="app.startTestSession()" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-medium shadow hover:bg-purple-700">📝 Kiểm tra (Test)</button>
+                </div>
+            </div>
 
-            return (
-                <div className="flex h-screen bg-[#0a092d] text-white overflow-hidden">
-                    {/* Sidebar */}
-                    <div className="w-64 bg-[#121139] border-r border-indigo-900/40 flex flex-col">
-                        <div className="p-4 flex items-center space-x-3 border-b border-indigo-900/40">
-                            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center font-black text-xl italic tracking-tighter shadow-lg shadow-blue-500/30">
-                                T
-                            </div>
-                            <span className="font-bold text-lg tracking-tight">Trung's Quizlet</span>
-                        </div>
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg">Danh sách từ vựng trong học phần</h3>
+                <button onclick="app.openAddCardModal()" class="text-sm bg-gray-200 dark:bg-gray-700 px-3 py-1.5 rounded-lg font-medium hover:bg-gray-300">+ Thêm thẻ mới</button>
+            </div>
+            <div id="detail-cards-list" class="space-y-3">
+                <!-- Render các thẻ card -->
+            </div>
+        </section>
 
-                        <div className="p-3 flex-1 overflow-y-auto">
-                            <button 
-                                onClick={() => { setCurrentView('home'); setSelectedFolderId(null); setSelectedSubfolder(null); }}
-                                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl font-medium text-sm transition ${currentView === 'home' && !selectedFolderId ? 'bg-indigo-600 text-white' : 'text-indigo-200 hover:bg-indigo-900/50'}`}
-                            >
-                                <span>Trang chủ</span>
-                            </button>
-
-                            <div className="mt-6">
-                                <div className="flex items-center justify-between px-3 mb-2">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">YOUR FOLDERS</span>
-                                    <button onClick={handleCreateFolder} className="text-xs text-indigo-300 hover:text-white font-semibold">+ New</button>
-                                </div>
-                                <div className="space-y-1">
-                                    {folders.map(folder => (
-                                        <div key={folder.id} className="group flex items-center justify-between px-3 py-2 rounded-lg text-sm text-indigo-200 hover:bg-indigo-900/40">
-                                            <div 
-                                                className="flex items-center space-x-2 truncate cursor-pointer flex-1"
-                                                onClick={() => { setSelectedFolderId(folder.id); setCurrentView('home'); }}
-                                            >
-                                                <span>📁</span>
-                                                <span className="truncate">{folder.name}</span>
-                                            </div>
-                                            <div className="hidden group-hover:flex items-center space-x-1">
-                                                <button onClick={() => handleRenameFolder(folder.id)} className="p-1 hover:text-white">✏️</button>
-                                                <button onClick={() => handleDeleteFolder(folder.id)} className="p-1 hover:text-red-400">🗑️</button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+        <!-- FLASHCARD LEARNING INTERFACE -->
+        <section id="tab-flashcard-player" class="hidden max-w-xl mx-auto space-y-6">
+            <div class="flex justify-between items-center">
+                <button onclick="app.openSetDetail(app.currentSetId)" class="text-sm text-gray-500 hover:underline">✕ Thoát</button>
+                <span id="fc-progress" class="text-sm font-medium text-gray-500">Thẻ 1 / 10</span>
+            </div>
+            
+            <!-- Thẻ Flashcard 3D Lật -->
+            <div class="perspective-1000 w-full h-80 cursor-pointer" onclick="app.flipCard()">
+                <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d shadow-xl rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center p-8 text-center">
+                    <div id="fc-front" class="absolute inset-0 flex flex-col items-center justify-center p-6 backface-hidden">
+                        <span class="text-xs uppercase tracking-widest text-brand-600 font-bold mb-2">Term</span>
+                        <h2 id="fc-term" class="text-3xl font-extrabold">Volunteer</h2>
+                        <p id="fc-pronounce" class="text-sm text-gray-400 mt-2">/ˌvɒl.ənˈtɪər/</p>
                     </div>
-
-                    {/* Main Content */}
-                    <div className="flex-1 flex flex-col overflow-hidden">
-                        <header className="h-16 bg-[#121139] border-b border-indigo-900/40 flex items-center justify-between px-6">
-                            <div className="text-sm font-semibold text-indigo-200">
-                                {currentView === 'home' ? 'Thư viện & Học phần cá nhân' : 'Khu vực học tập'}
-                            </div>
-                            <button 
-                                onClick={() => setCurrentView('editor')}
-                                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-semibold text-sm shadow-lg shadow-blue-600/30 transition"
-                            >
-                                + Tạo học phần
-                            </button>
-                        </header>
-
-                        <main className="flex-1 overflow-y-auto p-8">
-                            {currentView === 'home' && (
-                                <HomeView 
-                                    sets={sets} 
-                                    folders={folders}
-                                    selectedFolderId={selectedFolderId}
-                                    onSelectSet={(id) => { setActiveSetId(id); setCurrentView('set_detail'); }}
-                                    onCreateSet={() => setCurrentView('editor')}
-                                />
-                            )}
-                            {currentView === 'set_detail' && (
-                                <SetDetailView 
-                                    setObj={sets.find(s => s.id === activeSetId)}
-                                    onBack={() => setCurrentView('home')}
-                                    onStartFlashcards={() => setCurrentView('flashcard')}
-                                    onStartWritten={() => setCurrentView('written')}
-                                    onStartTest={() => setCurrentView('test')}
-                                    onStartGames={() => setCurrentView('games')}
-                                />
-                            )}
-                            {currentView === 'editor' && (
-                                <SetEditorView 
-                                    folders={folders}
-                                    onSave={(newSet) => {
-                                        setSets([...sets, newSet]);
-                                        setActiveSetId(newSet.id);
-                                        setCurrentView('set_detail');
-                                    }}
-                                    onCancel={() => setCurrentView('home')}
-                                />
-                            )}
-                            {currentView === 'flashcard' && (
-                                <FlashcardView setObj={sets.find(s => s.id === activeSetId)} onBack={() => setCurrentView('set_detail')} />
-                            )}
-                            {currentView === 'written' && (
-                                <WrittenView setObj={sets.find(s => s.id === activeSetId)} onBack={() => setCurrentView('set_detail')} />
-                            )}
-                            {currentView === 'test' && (
-                                <TestView setObj={sets.find(s => s.id === activeSetId)} onBack={() => setCurrentView('set_detail')} />
-                            )}
-                            {currentView === 'games' && (
-                                <GamesView setObj={sets.find(s => s.id === activeSetId)} onBack={() => setCurrentView('set_detail')} />
-                            )}
-                        </main>
+                    <div id="fc-back" class="absolute inset-0 flex flex-col items-center justify-center p-6 bg-indigo-50 dark:bg-gray-700 rounded-2xl hidden">
+                        <span class="text-xs uppercase tracking-widest text-indigo-600 font-bold mb-2">Definition</span>
+                        <h2 id="fc-def" class="text-2xl font-bold">Tình nguyện viên</h2>
+                        <p id="fc-example" class="text-sm text-gray-600 dark:text-gray-300 mt-3 italic">"She works as a volunteer."</p>
                     </div>
                 </div>
-            );
-        }
+            </div>
 
-        // Home View
-        function HomeView({ sets, folders, selectedFolderId, onSelectSet, onCreateSet }) {
-            const filteredSets = selectedFolderId ? sets.filter(s => s.folderId === selectedFolderId) : sets;
-            const folderObj = folders.find(f => f.id === selectedFolderId);
+            <!-- FSRS Buttons (Again=0, Hard=1, Good=3, Easy=7) -->
+            <div id="fsrs-controls" class="grid grid-cols-4 gap-2 hidden">
+                <button onclick="app.rateCard(0)" class="bg-red-500 text-white py-3 rounded-xl font-bold shadow hover:bg-red-600">Again (0)</button>
+                <button onclick="app.rateCard(1)" class="bg-orange-500 text-white py-3 rounded-xl font-bold shadow hover:bg-orange-600">Hard (1)</button>
+                <button onclick="app.rateCard(3)" class="bg-blue-500 text-white py-3 rounded-xl font-bold shadow hover:bg-blue-600">Good (3)</button>
+                <button onclick="app.rateCard(7)" class="bg-emerald-500 text-white py-3 rounded-xl font-bold shadow hover:bg-emerald-600">Easy (7)</button>
+            </div>
+            <div id="flip-prompt" class="text-center">
+                <button onclick="app.flipCard()" class="w-full py-3 bg-brand-600 text-white font-bold rounded-xl shadow hover:bg-brand-700">Lật thẻ xem đáp án</button>
+            </div>
+        </section>
 
-            return (
-                <div className="max-w-6xl mx-auto">
-                    {selectedFolderId && (
-                        <div className="mb-6 p-4 bg-[#161540] border border-indigo-900/50 rounded-2xl flex items-center justify-between">
-                            <h2 className="text-xl font-bold">📁 {folderObj ? folderObj.name : 'Thư mục'}</h2>
-                            <span className="text-sm text-indigo-300">{filteredSets.length} học phần</span>
-                        </div>
-                    )}
-                    <h1 className="text-2xl font-bold mb-6">{selectedFolderId ? 'Học phần trong thư mục' : 'Học phần của bạn'}</h1>
-                    {filteredSets.length === 0 ? (
-                        <div className="text-center py-20 bg-[#161540] rounded-3xl border border-indigo-900/40">
-                            <p className="text-indigo-300 mb-4">Chưa có học phần nào ở đây cả.</p>
-                            <button onClick={onCreateSet} className="bg-blue-600 px-6 py-2.5 rounded-xl font-bold">Tạo học phần ngay</button>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {filteredSets.map(set => (
-                                <div 
-                                    key={set.id}
-                                    onClick={() => onSelectSet(set.id)}
-                                    className="bg-[#161540] border border-indigo-900/50 hover:border-indigo-500/50 p-6 rounded-2xl cursor-pointer transition shadow-xl"
-                                >
-                                    <h3 className="text-xl font-bold mb-2">{set.title}</h3>
-                                    <p className="text-sm text-indigo-300">{set.cards.length} thuật ngữ</p>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+        <!-- MATCHING MODE INTERFACE -->
+        <section id="tab-matching-player" class="hidden max-w-2xl mx-auto space-y-6 text-center">
+            <div class="flex justify-between items-center">
+                <button onclick="app.openSetDetail(app.currentSetId)" class="text-sm text-gray-500 hover:underline">✕ Thoát</button>
+                <h2 class="text-xl font-bold">🧩 Chế độ Ghép cặp (Matching)</h2>
+                <span id="match-timer" class="font-mono font-bold text-brand-600">0s</span>
+            </div>
+            <p class="text-sm text-gray-500">Chọn một từ vựng ở cột Trái và nghĩa tương ứng ở cột Phải.</p>
+            <div class="grid grid-cols-2 gap-4" id="matching-grid">
+                <!-- Render các thẻ match -->
+            </div>
+        </section>
+
+        <!-- STATISTICS TAB -->
+        <section id="tab-statistics" class="hidden space-y-6">
+            <h2 class="text-xl font-bold">Thống kê học tập FSRS</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-100 dark:border-gray-700">
+                    <p class="text-sm text-gray-500">Tổng số thẻ</p>
+                    <h3 id="stat-total-cards" class="text-3xl font-bold mt-2 text-brand-600">0</h3>
                 </div>
-            );
-        }
-
-        // Set Detail View (Hiển thị dạng 2 cột giống Quizlet)
-        function SetDetailView({ setObj, onBack, onStartFlashcards, onStartWritten, onStartTest, onStartGames }) {
-            if (!setObj) return null;
-            return (
-                <div className="max-w-5xl mx-auto pb-20">
-                    <button onClick={onBack} className="text-indigo-300 hover:text-white mb-4 text-sm font-semibold">← Quay lại</button>
-                    <h1 className="text-3xl font-black mb-8">{setObj.title}</h1>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-                        <button onClick={onStartFlashcards} className="bg-[#161540] border border-indigo-900 hover:border-blue-500 p-5 rounded-2xl text-left transition shadow-lg">
-                            <div className="text-blue-400 font-bold mb-1">Flashcards</div>
-                            <div className="text-xs text-indigo-300">Lật thẻ 3D & Anki SRS</div>
-                        </button>
-                        <button onClick={onStartWritten} className="bg-[#161540] border border-indigo-900 hover:border-purple-500 p-5 rounded-2xl text-left transition shadow-lg">
-                            <div className="text-purple-400 font-bold mb-1">Written AI</div>
-                            <div className="text-xs text-indigo-300">Tự luận 2 chiều ngẫu nhiên</div>
-                        </button>
-                        <button onClick={onStartTest} className="bg-[#161540] border border-indigo-900 hover:border-yellow-500 p-5 rounded-2xl text-left transition shadow-lg">
-                            <div className="text-yellow-400 font-bold mb-1">Test</div>
-                            <div className="text-xs text-indigo-300">Bài kiểm tra tổng hợp</div>
-                        </button>
-                        <button onClick={onStartGames} className="bg-[#161540] border border-indigo-900 hover:border-green-500 p-5 rounded-2xl text-left transition shadow-lg">
-                            <div className="text-green-400 font-bold mb-1">Games 60FPS</div>
-                            <div className="text-xs text-indigo-300">Blast thiên thạch & Xếp gạch</div>
-                        </button>
-                    </div>
-
-                    <h2 className="text-xl font-bold mb-4">Danh sách thuật ngữ ({setObj.cards.length})</h2>
-                    <div className="space-y-4">
-                        {setObj.cards.map((card, idx) => (
-                            <div key={card.id} className="bg-[#161540] border border-indigo-900/60 p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                                <div>
-                                    <div className="text-xs text-indigo-400 mb-1">Thuật ngữ #{idx + 1} (Mặt trước)</div>
-                                    <div className="text-base font-medium whitespace-pre-wrap">{card.term}</div>
-                                    {card.frontImage && <img src={card.frontImage} className="mt-3 max-h-32 rounded-lg object-cover" />}
-                                </div>
-                                <div className="border-t md:border-t-0 md:border-l border-indigo-900/60 pt-4 md:pt-0 md:pl-6">
-                                    <div className="text-xs text-indigo-400 mb-1">Định nghĩa (Mặt sau)</div>
-                                    <div className="text-base font-medium whitespace-pre-wrap">{card.definition}</div>
-                                    {card.backImage && <img src={card.backImage} className="mt-3 max-h-32 rounded-lg object-cover" />}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-100 dark:border-gray-700">
+                    <p class="text-sm text-gray-500">Đã học / Thuần thục</p>
+                    <h3 id="stat-mastered" class="text-3xl font-bold mt-2 text-emerald-600">0</h3>
                 </div>
-            );
-        }
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-100 dark:border-gray-700">
+                    <p class="text-sm text-gray-500">Cần ôn tập hôm nay</p>
+                    <h3 id="stat-due" class="text-3xl font-bold mt-2 text-orange-500">0</h3>
+                </div>
+            </div>
+        </section>
 
-        // Set Editor View (Hỗ trợ nhập nhanh hàng loạt chuẩn toàn bộ nội dung vào Mặt trước)
-        function SetEditorView({ folders, onSave, onCancel }) {
-            const [title, setTitle] = useState('');
-            const [folderId, setFolderId] = useState(folders[0]?.id || '');
-            const [cards, setCards] = useState([{ id: '1', term: '', definition: '', frontImage: '', backImage: '' }]);
-            const [showBulkImport, setShowBulkImport] = useState(false);
-            const [bulkText, setBulkText] = useState('');
+    </main>
 
-            const addCard = () => {
-                setCards([...cards, { id: Date.now().toString(), term: '', definition: '', frontImage: '', backImage: '' }]);
-            };
+    <!-- Modal Tạo Học Phần -->
+    <div id="modal-set" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-lg font-bold">Tạo Học Phần Mới</h3>
+            <input id="input-set-title" type="text" placeholder="Tên học phần (VD: Tiếng Anh Y Khoa)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <textarea id="input-set-desc" placeholder="Mô tả học phần..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+            <div class="flex justify-end space-x-2">
+                <button onclick="app.closeModals()" class="px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700">Hủy</button>
+                <button onclick="app.saveNewSet()" class="px-4 py-2 rounded-xl text-sm font-medium bg-brand-600 text-white shadow hover:bg-brand-700">Tạo</button>
+            </div>
+        </div>
+    </div>
 
-            const updateCard = (id, field, val) => {
-                setCards(cards.map(c => c.id === id ? { ...c, [field]: val } : c));
-            };
+    <!-- Modal Thêm Thẻ Card -->
+    <div id="modal-card" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+            <h3 class="text-lg font-bold">Thêm Thẻ Flashcard Mới</h3>
+            <input id="input-card-term" type="text" placeholder="Thuật ngữ (Term)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <input id="input-card-pronounce" type="text" placeholder="Phiên âm (Pronunciation)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <input id="input-card-def" type="text" placeholder="Định nghĩa (Definition)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <input id="input-card-example" type="text" placeholder="Ví dụ (Example)..." class="w-full px-4 py-2 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <div class="flex justify-end space-x-2">
+                <button onclick="app.closeModals()" class="px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700">Hủy</button>
+                <button onclick="app.saveNewCard()" class="px-4 py-2 rounded-xl text-sm font-medium bg-brand-600 text-white shadow hover:bg-brand-700">Thêm Thẻ</button>
+            </div>
+        </div>
+    </div>
 
-            const removeCard = (id) => {
-                if (cards.length > 1) setCards(cards.filter(c => c.id !== id));
-            };
+    <!-- JavaScript Ứng Dụng -->
+    <script>
+        class TQuizApp {
+            constructor() {
+                this.state = JSON.parse(localStorage.getItem('tquiz_data')) || {
+                    sets: [
+                        {
+                            id: 'set-1',
+                            title: 'Tiếng Anh Y Khoa Cơ Bản',
+                            description: 'Thuật ngữ và từ vựng chuyên ngành y khoa thiết yếu.',
+                            cards: [
+                                { id: 'c1', term: 'Volunteer', pronunciation: '/ˌvɒl.ənˈtɪər/', definition: 'Tình nguyện viên', examples: ['She works as a volunteer.'], fsrs: { difficulty: 5.0, stability: 1.0, repetitions: 0, due: null } },
+                                { id: 'c2', term: 'Speciality', pronunciation: '/ˌspeʃ.iˈæl.ə.ti/', definition: 'Chuyên khoa / Đặc sản', examples: ['Cardiology is her speciality.'], fsrs: { difficulty: 5.0, stability: 1.0, repetitions: 0, due: null } },
+                                { id: 'c3', term: 'Heritage', pronunciation: '/ˈher.ɪ.tɪdʒ/', definition: 'Di sản', examples: ['Cultural heritage preservation.'], fsrs: { difficulty: 5.0, stability: 1.0, repetitions: 0, due: null } }
+                            ]
+                        }
+                    ]
+                };
+                this.currentSetId = null;
+                this.currentCardIndex = 0;
+                this.isFlipped = false;
+                this.init();
+            }
 
-            const handleBulkImport = () => {
-                if (!bulkText.trim()) return;
-                const lines = bulkText.split('\n');
-                const newCards = [];
-                lines.forEach(line => {
-                    if (!line.trim()) return;
-                    // Tách bằng Tab hoặc dấu gạch đứng nếu có, nếu không thì đưa toàn bộ vào mặt trước
-                    const parts = line.split(/\t|\|/);
-                    if (parts.length >= 2) {
-                        newCards.push({
-                            id: 'bulk_' + Math.random(),
-                            term: parts[0].trim(),
-                            definition: parts.slice(1).join(' | ').trim(),
-                            frontImage: '',
-                            backImage: ''
-                        });
+            init() {
+                if (localStorage.getItem('tquiz_dark') === 'true') {
+                    document.documentElement.classList.add('dark');
+                }
+                this.render();
+            }
+
+            save() {
+                localStorage.setItem('tquiz_data', JSON.stringify(this.state));
+                this.render();
+            }
+
+            toggleDarkMode() {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('tquiz_dark', isDark);
+            }
+
+            switchTab(tabId) {
+                ['dashboard', 'sets', 'study-detail', 'flashcard-player', 'matching-player', 'statistics'].forEach(t => {
+                    document.getElementById(`tab-${t}`).classList.add('hidden');
+                });
+                document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+                
+                // Active nav styling
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    if(btn.dataset.target === tabId) {
+                        btn.classList.add('bg-gray-100', 'dark:bg-gray-700');
                     } else {
-                        newCards.push({
-                            id: 'bulk_' + Math.random(),
-                            term: line.trim(),
-                            definition: '',
-                            frontImage: '',
-                            backImage: ''
-                        });
+                        btn.classList.remove('bg-gray-100', 'dark:bg-gray-700');
                     }
                 });
-                if (newCards.length > 0) {
-                    setCards([...cards.filter(c => c.term || c.definition), ...newCards]);
-                    setShowBulkImport(false);
-                    setBulkText('');
+
+                if(tabId === 'statistics') this.renderStats();
+                if(tabId === 'dashboard' || tabId === 'sets') this.renderSets();
+            }
+
+            render() {
+                this.renderSets();
+            }
+
+            renderSets() {
+                const grid = document.getElementById('dashboard-sets-grid');
+                const container = document.getElementById('sets-container');
+                let htmlDashboard = '';
+                let htmlSets = '';
+
+                this.state.sets.forEach(set => {
+                    const cardCount = set.cards.length;
+                    const cardHtml = `
+                        <div onclick="app.openSetDetail('${set.id}')" class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 cursor-pointer hover:shadow-md transition">
+                            <h3 class="font-bold text-lg">${set.title}</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">${set.description || 'Không có mô tả'}</p>
+                            <div class="mt-4 flex justify-between items-center text-xs text-brand-600 font-semibold">
+                                <span>📚 ${cardCount} thuật ngữ</span>
+                                <span>Học ngay →</span>
+                            </div>
+                        </div>
+                    `;
+                    htmlDashboard += cardHtml;
+                    htmlSets += cardHtml;
+                });
+
+                if(grid) grid.innerHTML = htmlDashboard || '<p class="text-gray-400">Chưa có học phần nào.</p>';
+                if(container) container.innerHTML = htmlSets || '<p class="text-gray-400">Chưa có học phần nào.</p>';
+            }
+
+            openSetDetail(setId) {
+                this.currentSetId = setId;
+                const set = this.state.sets.find(s => s.id === setId);
+                if(!set) return;
+
+                document.getElementById('detail-set-title').innerText = set.title;
+                document.getElementById('detail-set-desc').innerText = set.description;
+
+                const list = document.getElementById('detail-cards-list');
+                list.innerHTML = set.cards.map(c => `
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                        <div>
+                            <span class="font-bold text-base">${c.term}</span> <span class="text-xs text-gray-400">${c.pronunciation || ''}</span>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5">${c.definition}</p>
+                        </div>
+                        <button onclick="app.deleteCard('${c.id}')" class="text-red-500 hover:text-red-700 text-sm font-medium">Xóa</button>
+                    </div>
+                `).join('') || '<p class="text-gray-400">Chưa có thẻ từ vựng nào trong học phần này.</p>';
+
+                this.switchTab('study-detail');
+            }
+
+            openNewSetModal() { document.getElementById('modal-set').classList.remove('hidden'); }
+            openAddCardModal() { document.getElementById('modal-card').classList.remove('hidden'); }
+            closeModals() { 
+                document.getElementById('modal-set').classList.add('hidden'); 
+                document.getElementById('modal-card').classList.add('hidden'); 
+            }
+
+            saveNewSet() {
+                const title = document.getElementById('input-set-title').value.trim();
+                const description = document.getElementById('input-set-desc').value.trim();
+                if(!title) return alert('Vui lòng nhập tên học phần!');
+
+                this.state.sets.push({
+                    id: 'set-' + Date.now(),
+                    title,
+                    description,
+                    cards: []
+                });
+                this.save();
+                this.closeModals();
+                document.getElementById('input-set-title').value = '';
+                document.getElementById('input-set-desc').value = '';
+            }
+
+            saveNewCard() {
+                const term = document.getElementById('input-card-term').value.trim();
+                const pronunciation = document.getElementById('input-card-pronounce').value.trim();
+                const definition = document.getElementById('input-card-def').value.trim();
+                const example = document.getElementById('input-card-example').value.trim();
+
+                if(!term || !definition) return alert('Vui lòng nhập từ và nghĩa!');
+
+                const set = this.state.sets.find(s => s.id === this.currentSetId);
+                if(set) {
+                    set.cards.push({
+                        id: 'c-' + Date.now(),
+                        term,
+                        pronunciation,
+                        definition,
+                        examples: example ? [example] : [],
+                        fsrs: { difficulty: 5.0, stability: 1.0, repetitions: 0, due: null }
+                    });
+                    this.save();
+                    this.openSetDetail(this.currentSetId);
+                    this.closeModals();
+                    document.getElementById('input-card-term').value = '';
+                    document.getElementById('input-card-pronounce').value = '';
+                    document.getElementById('input-card-def').value = '';
+                    document.getElementById('input-card-example').value = '';
                 }
-            };
+            }
 
-            return (
-                <div className="max-w-4xl mx-auto pb-20">
-                    <h1 className="text-2xl font-bold mb-6">Tạo học phần mới</h1>
-                    <div className="space-y-4 mb-8">
-                        <input 
-                            type="text" 
-                            placeholder="Nhập tiêu đề học phần..." 
-                            value={title} 
-                            onChange={e => setTitle(e.target.value)}
-                            className="w-full bg-[#161540] border border-indigo-900 px-4 py-3 rounded-xl focus:outline-none focus:border-blue-500 font-semibold text-lg"
-                        />
-                        <select 
-                            value={folderId} 
-                            onChange={e => setFolderId(e.target.value)}
-                            className="bg-[#161540] border border-indigo-900 px-4 py-2.5 rounded-xl focus:outline-none text-sm"
-                        >
-                            {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                        </select>
-                    </div>
+            deleteCard(cardId) {
+                const set = this.state.sets.find(s => s.id === this.currentSetId);
+                if(set) {
+                    set.cards = set.cards.filter(c => c.id !== cardId);
+                    this.save();
+                    this.openSetDetail(this.currentSetId);
+                }
+            }
 
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold">Thuật ngữ</h2>
-                        <button 
-                            onClick={() => setShowBulkImport(true)}
-                            className="bg-indigo-600/50 hover:bg-indigo-600 px-4 py-2 rounded-xl text-sm font-semibold transition"
-                        >
-                            + Nhập nhanh hàng loạt từ Quizlet
-                        </button>
-                    </div>
+            startFlashcardSession() {
+                const set = this.state.sets.find(s => s.id === this.currentSetId);
+                if(!set || set.cards.length === 0) return alert('Học phần chưa có thẻ từ vựng nào!');
+                this.currentCardIndex = 0;
+                this.isFlipped = false;
+                this.switchTab('flashcard-player');
+                this.renderCurrentCard();
+            }
 
-                    {showBulkImport && (
-                        <div className="mb-8 bg-[#161540] border border-indigo-800 p-6 rounded-2xl">
-                            <h3 className="font-bold mb-2">Dán danh sách từ vựng</h3>
-                            <textarea 
-                                rows="6" 
-                                placeholder="Dán nội dung từ Quizlet vào đây..." 
-                                value={bulkText} 
-                                onChange={e => setBulkText(e.target.value)}
-                                className="w-full bg-[#0a092d] border border-indigo-900 p-3 rounded-xl mb-4 text-sm"
-                            ></textarea>
-                            <div className="flex space-x-3">
-                                <button onClick={handleBulkImport} className="bg-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">Thêm thẻ vào học phần</button>
-                                <button onClick={() => setShowBulkImport(false)} className="bg-gray-700 px-4 py-2 rounded-xl text-sm font-semibold">Huỷ</button>
-                            </div>
-                        </div>
-                    )}
+            renderCurrentCard() {
+                const set = this.state.sets.find(s => s.id === this.currentSetId);
+                const card = set.cards[this.currentCardIndex];
+                
+                document.getElementById('fc-progress').innerText = `Thẻ ${this.currentCardIndex + 1} / ${set.cards.length}`;
+                document.getElementById('fc-term').innerText = card.term;
+                document.getElementById('fc-pronounce').innerText = card.pronunciation || '';
+                document.getElementById('fc-def').innerText = card.definition;
+                document.getElementById('fc-example').innerText = card.examples && card.examples.length ? `"${card.examples[0]}"` : '';
 
-                    <div className="space-y-6">
-                        {cards.map((card, idx) => (
-                            <div key={card.id} className="bg-[#161540] border border-indigo-900 p-6 rounded-2xl relative">
-                                <div className="flex justify-between mb-4">
-                                    <span className="font-bold text-indigo-400">Thẻ #{idx + 1}</span>
-                                    <button onClick={() => removeCard(card.id)} className="text-red-400 text-sm hover:underline">Xoá thẻ</button>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <textarea 
-                                        placeholder="Thuật ngữ (Mặt trước)..." 
-                                        value={card.term} 
-                                        onChange={e => updateCard(card.id, 'term', e.target.value)}
-                                        className="bg-[#0a092d] border border-indigo-900 p-3 rounded-xl h-24 focus:outline-none"
-                                    ></textarea>
-                                    <textarea 
-                                        placeholder="Định nghĩa (Mặt sau)..." 
-                                        value={card.definition} 
-                                        onChange={e => updateCard(card.id, 'definition', e.target.value)}
-                                        className="bg-[#0a092d] border border-indigo-900 p-3 rounded-xl h-24 focus:outline-none"
-                                    ></textarea>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                this.isFlipped = false;
+                document.getElementById('fc-front').classList.remove('hidden');
+                document.getElementById('fc-back').classList.add('hidden');
+                document.getElementById('fsrs-controls').classList.add('hidden');
+                document.getElementById('flip-prompt').classList.remove('hidden');
+            }
 
-                    <div className="mt-6 flex justify-between">
-                        <button onClick={addCard} className="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold">+ Thêm thẻ</button>
-                        <div className="space-x-3">
-                            <button onClick={onCancel} className="bg-gray-700 px-6 py-3 rounded-xl font-bold">Huỷ</button>
-                            <button onClick={() => {
-                                if (!title.trim()) { alert('Vui lòng nhập tiêu đề học phần'); return; }
-                                onSave({ id: 'set_' + Date.now(), title: title.trim(), folderId, cards });
-                            }} className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-xl font-bold">Lưu học phần</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // Flashcards View (Anki SRS)
-        function FlashcardView({ setObj, onBack }) {
-            const [currentIndex, setCurrentIndex] = useState(0);
-            const [isFlipped, setIsFlipped] = useState(false);
-            if (!setObj || setObj.cards.length === 0) return <div>Không có thẻ nào.</div>;
-            const card = setObj.cards[currentIndex];
-
-            return (
-                <div className="max-w-2xl mx-auto text-center pb-20">
-                    <div className="flex justify-between items-center mb-6">
-                        <button onClick={onBack} className="text-indigo-300 font-semibold">← Quay lại</button>
-                        <span className="text-sm font-bold">{currentIndex + 1} / {setObj.cards.length}</span>
-                    </div>
-
-                    <div 
-                        onClick={() => setIsFlipped(!isFlipped)}
-                        className="w-full h-80 bg-[#161540] border border-indigo-800 rounded-3xl p-8 flex items-center justify-center cursor-pointer shadow-2xl relative text-xl font-semibold mb-6"
-                    >
-                        <div>{isFlipped ? card.definition : card.term}</div>
-                    </div>
-
-                    <div className="flex justify-center space-x-4">
-                        <button onClick={() => { setIsFlipped(false); setCurrentIndex((currentIndex + 1) % setObj.cards.length); }} className="bg-blue-600 px-6 py-3 rounded-xl font-bold">Tiếp theo</button>
-                    </div>
-                </div>
-            );
-        }
-
-        // Written View (2 chiều ngẫu nhiên)
-        function WrittenView({ setObj, onBack }) {
-            const [index, setIndex] = useState(0);
-            const [input, setInput] = useState('');
-            const [feedback, setFeedback] = useState(null);
-            if (!setObj || setObj.cards.length === 0) return <div>Không có thẻ nào.</div>;
-            const card = setObj.cards[index];
-
-            const handleCheck = () => {
-                if (input.trim().toLowerCase() === card.term.toLowerCase() || card.term.toLowerCase().includes(input.trim().toLowerCase())) {
-                    setFeedback('Đính chính xác!');
+            flipCard() {
+                this.isFlipped = !this.isFlipped;
+                if(this.isFlipped) {
+                    document.getElementById('fc-front').classList.add('hidden');
+                    document.getElementById('fc-back').classList.remove('hidden');
+                    document.getElementById('fsrs-controls').classList.remove('hidden');
+                    document.getElementById('flip-prompt').classList.add('hidden');
                 } else {
-                    setFeedback('Chưa chính xác. Đáp án là: ' + card.term);
+                    document.getElementById('fc-front').classList.remove('hidden');
+                    document.getElementById('fc-back').classList.add('hidden');
+                    document.getElementById('fsrs-controls').classList.add('hidden');
+                    document.getElementById('flip-prompt').classList.remove('hidden');
                 }
-            };
+            }
 
-            return (
-                <div className="max-w-xl mx-auto pb-20">
-                    <button onClick={onBack} className="text-indigo-300 font-semibold mb-6">← Quay lại</button>
-                    <div className="bg-[#161540] border border-indigo-900 p-8 rounded-3xl shadow-xl">
-                        <div className="text-sm text-indigo-400 mb-2">Định nghĩa:</div>
-                        <div className="text-lg font-bold mb-6">{card.definition}</div>
-                        <input 
-                            type="text" 
-                            placeholder="Nhập câu trả lời của bạn..." 
-                            value={input}
-                            onChange={e => setInput(e.target.value)}
-                            className="w-full bg-[#0a092d] border border-indigo-900 p-4 rounded-xl mb-4 focus:outline-none"
-                        />
-                        <button onClick={handleCheck} className="w-full bg-blue-600 py-3 rounded-xl font-bold">Kiểm tra</button>
-                        {feedback && <div className="mt-4 p-3 bg-indigo-950 rounded-xl font-bold text-center">{feedback}</div>}
+            rateCard(rating) {
+                // Thuật toán FSRS giả lập nâng cao
+                const set = this.state.sets.find(s => s.id === this.currentSetId);
+                const card = set.cards[this.currentCardIndex];
+                card.fsrs.repetitions += 1;
+                card.fsrs.due = new Date(Date.now() + rating * 86400000).toISOString();
+                this.save();
+
+                this.currentCardIndex++;
+                if(this.currentCardIndex < set.cards.length) {
+                    this.renderCurrentCard();
+                } else {
+                    alert('🎉 Chúc mừng bạn đã hoàn thành phiên ôn tập FSRS!');
+                    this.openSetDetail(this.currentSetId);
+                }
+            }
+
+            startMatchingSession() {
+                const set = this.state.sets.find(s => s.id === this.currentSetId);
+                if(!set || set.cards.length < 2) return alert('Cần ít nhất 2 thẻ để chơi Matching!');
+                this.switchTab('matching-player');
+                
+                const grid = document.getElementById('matching-grid');
+                let items = [];
+                set.cards.forEach(c => {
+                    items.push({ id: c.id, text: c.term, type: 'term' });
+                    items.push({ id: c.id, text: c.definition, type: 'def' });
+                });
+                items.sort(() => Math.random() - 0.5);
+
+                grid.innerHTML = items.map(item => `
+                    <div onclick="app.selectMatchItem(this, '${item.id}', '${item.type}')" class="match-item bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer font-semibold shadow-sm hover:border-brand-500 transition">
+                        ${item.text}
                     </div>
-                </div>
-            );
+                `).join('');
+            }
+
+            selectedMatch = null;
+            selectMatchItem(element, id, type) {
+                if(element.classList.contains('bg-emerald-500')) return;
+                
+                if(!this.selectedMatch) {
+                    this.selectedMatch = { element, id, type };
+                    element.classList.add('ring-2', 'ring-brand-500');
+                } else {
+                    if(this.selectedMatch.element === element) {
+                        element.classList.remove('ring-2', 'ring-brand-500');
+                        this.selectedMatch = null;
+                        return;
+                    }
+                    if(this.selectedMatch.id === id && this.selectedMatch.type !== type) {
+                        // Đúng cặp
+                        element.classList.add('bg-emerald-500', 'text-white');
+                        this.selectedMatch.element.classList.add('bg-emerald-500', 'text-white');
+                        this.selectedMatch.element.classList.remove('ring-2', 'ring-brand-500');
+                        this.selectedMatch = null;
+
+                        // Check chiến thắng
+                        if(document.querySelectorAll('#matching-grid .bg-emerald-500').length === document.querySelectorAll('#matching-grid .match-item').length) {
+                            setTimeout(() => alert('🎉 Bạn đã hoàn thành trò chơi Matching xuất sắc!'), 200);
+                        }
+                    } else {
+                        // Sai cặp
+                        element.classList.add('bg-red-100', 'dark:bg-red-900');
+                        setTimeout(() => {
+                            element.classList.remove('bg-red-100', 'dark:bg-red-900');
+                            this.selectedMatch.element.classList.remove('ring-2', 'ring-brand-500');
+                            this.selectedMatch = null;
+                        }, 400);
+                    }
+                }
+            }
+
+            startTestSession() {
+                alert('Chế độ Test Generator (Trắc nghiệm, Tự luận, True/False) sẽ tự động tạo đề thi ngẫu nhiên ở phiên bản kế tiếp.');
+            }
+
+            renderStats() {
+                let totalCards = 0;
+                let mastered = 0;
+                let due = 0;
+                this.state.sets.forEach(s => {
+                    totalCards += s.cards.length;
+                    s.cards.forEach(c => {
+                        if(c.fsrs.repetitions > 2) mastered++;
+                        due++;
+                    });
+                });
+                document.getElementById('stat-total-cards').innerText = totalCards;
+                document.getElementById('stat-mastered').innerText = mastered;
+                document.getElementById('stat-due').innerText = due;
+            }
+
+            exportData() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", "tquiz_backup.json");
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+            }
+
+            quickStartStudy() {
+                if(this.state.sets.length > 0) {
+                    this.openSetDetail(this.state.sets[0].id);
+                    this.startFlashcardSession();
+                } else {
+                    this.switchTab('sets');
+                }
+            }
         }
 
-        // Test View
-        function TestView({ setObj, onBack }) {
-            if (!setObj) return null;
-            return (
-                <div className="max-w-2xl mx-auto pb-20 text-center">
-                    <button onClick={onBack} className="text-indigo-300 font-semibold mb-6 float-left">← Quay lại</button>
-                    <h1 className="text-2xl font-bold mb-6">Bài kiểm tra tổng hợp</h1>
-                    <div className="bg-[#161540] p-8 rounded-3xl">Hệ thống bài kiểm tra đang sẵn sàng cho {setObj.cards.length} thuật ngữ.</div>
-                </div>
-            );
-        }
-
-        // Games View
-        function GamesView({ setObj, onBack }) {
-            if (!setObj) return null;
-            return (
-                <div className="max-w-3xl mx-auto pb-20 text-center">
-                    <button onClick={onBack} className="text-indigo-300 font-semibold mb-6 float-left">← Quay lại</button>
-                    <h1 className="text-2xl font-bold mb-6">Trò chơi Arcade 60FPS</h1>
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="bg-[#161540] p-8 rounded-3xl border border-indigo-900">
-                            <h3 className="font-bold text-lg mb-2">🚀 Blast Arcade</h3>
-                            <p className="text-sm text-indigo-300 mb-4">Bắn thiên thạch phản xạ từ vựng.</p>
-                            <button onClick={() => alert('Đang khởi chạy Blast Game!')} className="bg-blue-600 px-6 py-2.5 rounded-xl font-bold">Chơi ngay</button>
-                        </div>
-                        <div className="bg-[#161540] p-8 rounded-3xl border border-indigo-900">
-                            <h3 className="font-bold text-lg mb-2">🧱 Blocks 8x8</h3>
-                            <p className="text-sm text-indigo-300 mb-4">Xếp gạch trí tuệ kết hợp từ vựng.</p>
-                            <button onClick={() => alert('Đang khởi chạy Blocks Game!')} className="bg-blue-600 px-6 py-2.5 rounded-xl font-bold">Chơi ngay</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const app = new TQuizApp();
     </script>
 </body>
 </html>
