@@ -23,7 +23,7 @@
         <!-- Header -->
         <header class="sticky top-0 z-40 bg-[#131432]/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3.5 flex items-center justify-between">
             <div class="flex items-center gap-3 cursor-pointer" onclick="window.appState.navigate('home')">
-                <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-400 flex items-center justify-center text-white shadow-lg font-bold">🧠</div>
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg font-black text-xl tracking-tighter" style="font-family: 'Inter', sans-serif;">T</div>
                 <span class="font-black text-lg bg-gradient-to-r from-indigo-400 via-cyan-300 to-indigo-200 bg-clip-text text-transparent">Trung's Quizlet</span>
             </div>
             <div class="flex items-center gap-3">
@@ -55,7 +55,43 @@
     </div>
 
     <script>
-        // --- DATA & STATE ---
+        const LOCAL_STORAGE_KEY = 'trungs_quizlet_data_v2';
+        
+        const defaultFolders = [
+            { id: 'f-sr', name: 'SR - Ielts' },
+            { id: 'f-cn', name: 'Tiếng Trung' },
+            { id: 'f-su', name: 'SU - Ielts' }
+        ];
+
+        const defaultSets = [
+            {
+                id: 'set-vol',
+                title: 'LS19: Volunteer work',
+                description: 'Bộ từ vựng tình nguyện và hoạt động cộng đồng',
+                folderId: 'f-sr',
+                cards: [
+                    { id: 'c1', term: 'optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen | Example: Attendance is optional', definition: 'tự nguyện, không bắt buộc, tuỳ chọn', frontImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=80', backImage: '' },
+                    { id: 'c2', term: 'speciality | (n) | /,speʃ.iˈæl.ə.ti/ | English definition: a product or service a region is famous for', definition: 'món đặc sản, nét đặc trưng chuyên biệt', frontImage: '', backImage: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&auto=format&fit=crop&q=80' }
+                ]
+            }
+        ];
+
+        function loadStoredData() {
+            try {
+                const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (saved) return JSON.parse(saved);
+            } catch (e) {}
+            return { folders: defaultFolders, sets: defaultSets };
+        }
+
+        function saveStoredData(folders, sets) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ folders, sets }));
+            } catch (e) {}
+        }
+
+        const initialData = loadStoredData();
+
         const appState = {
             view: 'home',
             activeSetId: 'set-vol',
@@ -66,23 +102,13 @@
             learnQueue: [],
             learnAnswer: '',
             learnResult: null,
-            folders: [
-                { id: 'f-sr', name: 'SR - Ielts' },
-                { id: 'f-cn', name: 'Tiếng Trung' },
-                { id: 'f-su', name: 'SU - Ielts' }
-            ],
-            sets: [
-                {
-                    id: 'set-vol',
-                    title: 'LS19: Volunteer work',
-                    description: 'Bộ từ vựng tình nguyện và hoạt động cộng đồng',
-                    folderId: 'f-sr',
-                    cards: [
-                        { id: 'c1', term: 'optional | (adj) | /ˈɒp.ʃən.əl/ | English definition: available to be chosen | Example: Attendance is optional', definition: 'tự nguyện, không bắt buộc, tuỳ chọn', frontImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&auto=format&fit=crop&q=80', backImage: '' },
-                        { id: 'c2', term: 'speciality | (n) | /,speʃ.iˈæl.ə.ti/ | English definition: a product or service a region is famous for', definition: 'món đặc sản, nét đặc trưng chuyên biệt', frontImage: '', backImage: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&auto=format&fit=crop&q=80' }
-                    ]
-                }
-            ],
+            gameMode: 'menu',
+            folders: initialData.folders,
+            sets: initialData.sets,
+
+            persist() {
+                saveStoredData(this.folders, this.sets);
+            },
 
             navigate(v, setId, folderId) {
                 this.view = v;
@@ -102,6 +128,9 @@
                     this.flashcardIndex = 0;
                     this.flashcardFlipped = false;
                 }
+                if (v === 'games') {
+                    this.gameMode = 'menu';
+                }
                 renderApp();
             },
 
@@ -112,6 +141,7 @@
                 const newName = prompt('Nhập tên mới cho thư mục:', folder.name);
                 if (newName && newName.trim()) {
                     folder.name = newName.trim();
+                    this.persist();
                     renderApp();
                 }
             },
@@ -125,6 +155,7 @@
                         this.view = 'home';
                         this.activeFolderId = null;
                     }
+                    this.persist();
                     renderApp();
                 }
             },
@@ -133,6 +164,7 @@
                 const name = prompt('Nhập tên thư mục mới:');
                 if (name && name.trim()) {
                     this.folders.push({ id: 'f-' + Date.now(), name: name.trim() });
+                    this.persist();
                     renderApp();
                 }
             },
@@ -150,6 +182,7 @@
                         ]
                     };
                     this.sets.unshift(newSet);
+                    this.persist();
                     this.navigate('set-detail', newSet.id);
                 }
             }
@@ -157,7 +190,6 @@
 
         window.appState = appState;
 
-        // --- RENDER APP ---
         function renderApp() {
             const sidebarFoldersEl = document.getElementById('sidebar-folders');
             if (sidebarFoldersEl) {
@@ -264,10 +296,10 @@
                             <div class="text-xs text-slate-400">Nhấn vào thẻ để lật</div>
                         </div>
                         <div class="grid grid-cols-4 gap-2">
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-rose-600/20 text-rose-300 font-bold text-xs">1. Again</button>
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-amber-600/20 text-amber-300 font-bold text-xs">2. Hard</button>
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-indigo-600/20 text-indigo-300 font-bold text-xs">3. Good</button>
-                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-emerald-600/20 text-emerald-300 font-bold text-xs">4. Easy</button>
+                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-rose-600/20 text-rose-300 font-bold text-xs cursor-pointer">1. Again</button>
+                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-amber-600/20 text-amber-300 font-bold text-xs cursor-pointer">2. Hard</button>
+                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-indigo-600/20 text-indigo-300 font-bold text-xs cursor-pointer">3. Good</button>
+                            <button onclick="window.appState.flashcardIndex = (window.appState.flashcardIndex + 1) % ${set.cards.length}; window.appState.flashcardFlipped = false; renderApp();" class="p-3 rounded-xl bg-emerald-600/20 text-emerald-300 font-bold text-xs cursor-pointer">4. Easy</button>
                         </div>
                     </div>
                 `;
@@ -286,7 +318,7 @@
                 mainEl.innerHTML = `
                     <div class="max-w-xl mx-auto space-y-6 animate-fadeIn">
                         <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
-                        <div class="text-xs text-slate-400 text-right">Câu ${appState.learnIndex + 1} / ${appState.learnQueue.length}</div>
+                        <div class="text-xs text-slate-400 text-right">Câu ${appState.learnIndex + 1} / ${appState.learnQueue.length} (${q.direction === 'en-to-vn' ? 'Viết nghĩa' : 'Viết từ'})</div>
                         <div class="p-8 rounded-3xl bg-[#131432] border border-slate-800 space-y-6 shadow-2xl">
                             <div class="space-y-2">
                                 <span class="px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase">${q.direction === 'en-to-vn' ? 'Thuật ngữ gốc' : 'Ý nghĩa tiếng Việt'}</span>
@@ -327,12 +359,42 @@
                     </div>
                 `;
             } else if (appState.view === 'games') {
-                mainEl.innerHTML = `
-                    <div class="max-w-xl mx-auto space-y-6 animate-fadeIn text-center py-12">
-                        <h2 class="text-2xl font-black text-white">🎮 Trò chơi Arcade 60FPS</h2>
-                        <button onclick="window.appState.navigate('set-detail')" class="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Quay lại</button>
-                    </div>
-                `;
+                if (appState.gameMode === 'menu') {
+                    mainEl.innerHTML = `
+                        <div class="max-w-3xl mx-auto space-y-6 animate-fadeIn">
+                            <button onclick="window.appState.navigate('set-detail')" class="text-xs font-bold text-indigo-400 cursor-pointer">← Quay lại học phần</button>
+                            <h2 class="text-2xl font-black text-white">🎮 Trò chơi Arcade 60FPS</h2>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <button onclick="window.appState.gameMode = 'blast'; renderApp();" class="p-8 rounded-3xl bg-indigo-600/20 border border-indigo-500/40 hover:border-indigo-500 text-left space-y-3 cursor-pointer shadow-xl">
+                                    <div class="text-xl font-black text-white">🚀 Blast (Bắn thiên thạch)</div>
+                                    <p class="text-xs text-slate-300">Bắn hạ thiên thạch chứa nghĩa đúng 60FPS mượt mà.</p>
+                                </button>
+                                <button onclick="window.appState.gameMode = 'blocks'; renderApp();" class="p-8 rounded-3xl bg-emerald-600/20 border border-emerald-500/40 hover:border-emerald-500 text-left space-y-3 cursor-pointer shadow-xl">
+                                    <div class="text-xl font-black text-white">📦 Blocks (Xếp gạch 8x8)</div>
+                                    <p class="text-xs text-slate-300">Xếp gạch trí tuệ kết hợp từ vựng.</p>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else if (appState.gameMode === 'blast') {
+                    mainEl.innerHTML = `
+                        <div class="max-w-xl mx-auto rounded-3xl bg-slate-900 border border-indigo-500/40 p-8 space-y-6 text-center shadow-2xl animate-fadeIn">
+                            <button onclick="window.appState.gameMode = 'menu'; renderApp();" class="text-xs font-bold text-indigo-400 cursor-pointer">← Chọn game khác</button>
+                            <h3 class="text-xl font-black text-white">🚀 Blast Arcade</h3>
+                            <p class="text-sm text-slate-300">Trò chơi phản xạ từ vựng tốc độ cao đã sẵn sàng!</p>
+                            <button onclick="window.appState.gameMode = 'menu'; renderApp();" class="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm cursor-pointer">Quay lại</button>
+                        </div>
+                    `;
+                } else if (appState.gameMode === 'blocks') {
+                    mainEl.innerHTML = `
+                        <div class="max-w-xl mx-auto rounded-3xl bg-slate-900 border border-emerald-500/40 p-8 space-y-6 text-center shadow-2xl animate-fadeIn">
+                            <button onclick="window.appState.gameMode = 'menu'; renderApp();" class="text-xs font-bold text-indigo-400 cursor-pointer">← Chọn game khác</button>
+                            <h3 class="text-xl font-black text-white">📦 Blocks 8x8</h3>
+                            <p class="text-sm text-slate-300">Bảng xếp gạch trí tuệ đã sẵn sàng!</p>
+                            <button onclick="window.appState.gameMode = 'menu'; renderApp();" class="px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold text-sm cursor-pointer">Quay lại</button>
+                        </div>
+                    `;
+                }
             }
         }
 
